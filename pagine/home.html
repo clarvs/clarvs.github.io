@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarvs - Home</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/home.css">
+    <link rel="stylesheet" href="../assets/css/animations.css">
+    <link rel="icon" href="../assets/Icons/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Three.js per le particelle 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div id="loading" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 26, 46, 0.9); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #6c5ce7; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-container">
+            <nav class="main-nav">
+                <div class="logo">
+                    <img src="../assets/Icons/logo.png" alt="CLARVS Logo">
+                    <span>CLARVS</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="home.html" class="nav-link active">Home</a></li>
+                    <li><a href="roster.html" class="nav-link">Roster</a></li>
+                    <li><a href="staff.html" class="nav-link">Staff</a></li>
+                    <li><a href="tv.html" class="nav-link">Clarvs TV</a></li>
+                </ul>
+                <button class="mobile-menu-btn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="home-page">
+        <!-- Canvas per particelle 3D -->
+        <canvas id="particles-canvas"></canvas>
+        
+        <section class="hero particles-bg" aria-labelledby="hero-heading">
+            <div class="hero-content animate-fade-in">
+                <h1 id="hero-heading" class="hero-title animate-slide-up">CLARVS</h1>
+                <div class="hero-buttons animate-slide-up animate-delay-1">
+                    <a href="roster.html" data-page="roster" class="cta-button ripple hover-lift">SCOPRI IL TEAM</a>
+                    <a href="#news" class="cta-button transparent ripple hover-lift animate-delay-1">ULTIME NOTIZIE</a>
+                </div>
+                <p class="hero-text animate-text-glow animate-slide-up animate-delay-2">dal 2019 per fare la storia insieme...</p>
+            </div>
+        </section>
+        
+        <!-- Roster Preview Section -->
+        <section class="roster-preview reveal" aria-labelledby="roster-heading">
+            <div class="container">
+                <h2 id="roster-heading">IL NOSTRO ROSTER</h2>
+                <div class="roster-slider-wrapper">
+                    <button class="slider-btn prev" onclick="previousSlide()">‹</button>
+                    <div class="roster-slider">
+                        <div class="roster-container" id="rosterContainer">
+                            <!-- Cards del roster -->
+                            <div class="roster-card">
+                                <div class="card-content">
+                                    <div class="player-initial">CR</div>
+                                    <h3>Cryzee</h3>
+                                    <p class="player-role">PRO PLAYER</p>
+                                    <div class="social-icons">
+                                        <a href="https://x.com/Cryzee7x" target="_blank"><i class="fab fa-twitter"></i></a>
+                                        <a href="https://www.instagram.com/cryzee7x?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank"><i class="fab fa-instagram"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="roster-card">
+                                <div class="card-content">
+                                    <div class="player-initial">GB</div>
+                                    <h3>Gabbs</h3>
+                                    <p class="player-role">PRO PLAYER</p>
+                                    <div class="social-icons">
+                                        <a href="https://x.com/gabbsfn" target="_blank"><i class="fab fa-twitter"></i></a>
+                                        <a href="https://www.instagram.com/gabbsfn?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank"><i class="fab fa-instagram"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="roster-card">
+                                <div class="card-content">
+                                    <div class="player-initial">IC</div>
+                                    <h3>Iceleoh</h3>
+                                    <p class="player-role">PRO PLAYER</p>
+                                    <div class="social-icons">
+                                        <a href="https://x.com/iceLeoh" target="_blank"><i class="fab fa-twitter"></i></a>
+                                        <a href="https://www.instagram.com/iceleoh?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank"><i class="fab fa-instagram"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="roster-card">
+                                <div class="card-content">
+                                    <div class="player-initial">PT</div>
+                                    <h3>Pante</h3>
+                                    <p class="player-role">TALENT</p>
+                                    <div class="social-icons">
+                                        <a href="https://x.com/Pantefn7" target="_blank"><i class="fab fa-twitter"></i></a>
+                                        <a href="https://www.instagram.com/pantefn_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank"><i class="fab fa-instagram"></i></a>
+                                        <a href="https://www.youtube.com/@pantefn" target="_blank"><i class="fab fa-youtube"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="roster-card">
+                                <div class="card-content">
+                                    <div class="player-initial">RV</div>
+                                    <h3>Reva</h3>
+                                    <p class="player-role">ACADEMY</p>
+                                    <div class="social-icons">
+                                        <a href="https://x.com/RevaXbot" target="_blank"><i class="fab fa-twitter"></i></a>
+                                        <a href="https://www.instagram.com/reva_exe?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank"><i class="fab fa-instagram"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="roster-card">
+                                <div class="card-content">
+                                    <div class="player-initial">HX</div>
+                                    <h3>Haxo</h3>
+                                    <p class="player-role">ACADEMY</p>
+                                    <div class="social-icons">
+                                        <a href="https://x.com/HaxoFN_" target="_blank"><i class="fab fa-twitter"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="roster-card">
+                                <div class="card-content">
+                                    <div class="player-initial">LR</div>
+                                    <h3>Loran</h3>
+                                    <p class="player-role">ACADEMY</p>
+                                    <div class="social-icons">
+                                        <a href="https://x.com/LoranceFN" target="_blank"><i class="fab fa-twitter"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="slider-btn next" onclick="nextSlide()">›</button>
+                </div>
+                <div class="slider-dots">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="news-section reveal" aria-labelledby="news-heading" id="news">
+            <div class="container">
+                <h2 id="news-heading">Ultime Notizie</h2>
+                <div class="news-grid" id="news-grid">
+                    <!-- Le notizie verranno caricate dinamicamente da home.js -->
+                </div>
+            </div>
+        </section>
+        
+        <section class="social-feed reveal" aria-labelledby="social-heading">
+            <div class="container">
+                <h2 id="social-heading">Dai Nostri Social</h2>
+                <div class="social-tabs" role="tablist">
+                    <button class="social-tab active" data-platform="instagram" role="tab" aria-selected="true" aria-controls="instagram-panel">Instagram</button>
+                    <button class="social-tab" data-platform="twitter" role="tab" aria-selected="false" aria-controls="twitter-panel">X</button>
+                </div>
+                <div class="social-posts" id="social-posts">
+                    <!-- I post verranno caricati dinamicamente da socialfeed.js -->
+                </div>
+            </div>
+        </section>
+        
+        <section class="upcoming-events reveal" aria-labelledby="events-heading">
+            <div class="container">
+                <h2 id="events-heading">Prossimi Eventi</h2>
+                <div class="events-list" id="events-list">
+                    <!-- Gli eventi verranno caricati dinamicamente da home.js -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="social-links">
+                <a href="https://www.instagram.com/clarvs.gg/" target="_blank"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/@clarvs" target="_blank"><i class="fab fa-youtube"></i></a>
+                <a href="https://x.com/ClarvsTeam" target="_blank"><i class="fab fa-twitter"></i></a>
+            </div>
+            <p>&copy; 2019 Clarvs Esport. Tutti i diritti riservati.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="../js/main.js"></script>
+    <script src="../js/home.js"></script>
+    <script src="../js/socialfeed.js"></script>
+    <script src="../js/interactions.js"></script>
+</body>
+</html>

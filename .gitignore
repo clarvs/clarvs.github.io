@@ -1,0 +1,58 @@
+# ======================================
+# GITIGNORE CLARVS WEBSITE
+# ======================================
+
+# 🔒 FILE SENSIBILI (PROTETTI)
+.env
+.env.local
+.env.production
+.env.staging
+*.key
+*.pem
+*.p12
+secrets/
+
+# 📁 NODE MODULES
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 🗂️ LOGS
+logs/
+*.log
+
+# 💾 CACHE
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+dist/
+build/
+
+# 🔧 IDE & EDITOR
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 💻 SISTEMA OPERATIVO
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 🚫 WINDOWS ZONE IDENTIFIER
+*.Zone.Identifier
+
+# 🔄 BACKUP
+*.bak
+*.backup
+*.old
+
+# ⚠️ IMPORTANTE: Il file .env NON deve mai essere committato!
+# Contiene API keys e token sensibili

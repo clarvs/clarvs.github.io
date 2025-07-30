@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarvs TV</title>
+    <!-- Collegamenti CSS -->
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/tv.css">
+    <link rel="stylesheet" href="../assets/css/animations.css">
+    <!-- Font Awesome (se necessario) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header (puoi includere lo stesso header di index.html se vuoi mantenere la navigazione) -->
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">
+                <img src="../assets/Icons/logo.png" alt="CLARVS Logo">
+                <span>CLARVS</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="roster.html" class="nav-link">Roster</a></li>
+                <li><a href="staff.html" class="nav-link">Staff</a></li>
+                <li><a href="tv.html" class="nav-link active">Clarvs TV</a></li>
+            </ul>
+            <div class="mobile-menu-btn">☰</div>
+        </nav>
+    </header>
+
+    <!-- Contenuto principale (il tuo contenuto esistente) -->
+    <main class="main-container">
+        <div class="page-content">
+            <div class="tv-page">
+                <h1>Clarvs TV</h1>
+                <div class="tv-container">
+                    <div class="tv-screen" id="tv-screen"></div>
+                    <div class="tv-controls">
+                        <button id="fullscreen-btn">Schermo Intero</button>
+                        <div class="stream-status" id="stream-status">
+                            <span class="dot"></span>
+                            <span>Live: Nessun stream attivo</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="schedule">
+                    <h2>Programmazione</h2>
+                    <div class="schedule-list" id="schedule-list">
+                        <!-- La programmazione verrà caricata qui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer (puoi includere lo stesso footer di index.html) -->
+    <footer class="footer">
+        <div class="social-links">
+            <a href="https://twitter.com/clarvsesport" target="_blank"><i class="fab fa-twitter"></i></a>
+            <a href="https://www.instagram.com/clarvs.gg/" target="_blank"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.youtube.com/@clarvs" target="_blank"><i class="fab fa-youtube"></i></a>
+            <a href="https://x.com/ClarvsTeam" target="_blank"><i class="fab fa-twitter"></i></a>
+        </div>
+        <p>&copy; 2019 Clarvs Esport. Tutti i diritti riservati.</p>
+    </footer>
+
+    <!-- Script JavaScript -->
+    <script src="../js/main.js"></script>
+    <script src="../js/streamapi.js"></script>
+    <script src="../js/tv.js"></script>
+</body>
+</html>

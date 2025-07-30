@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarvs TV - Test</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/tv.css">
+    <style>
+        .debug-info {
+            background: #222;
+            color: #00bcd4;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">
+                <span>CLARVS TV - TEST</span>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <div class="page-content">
+            <div class="tv-page">
+                <h1>🔧 Clarvs TV - Modalità Test</h1>
+                
+                <div class="debug-info">
+                    <strong>Debug Info:</strong><br>
+                    Questa è una versione di test per verificare il funzionamento della TV.<br>
+                    Controlla la console del browser (F12) per i log di debug.
+                </div>
+                
+                <div class="tv-container">
+                    <div class="tv-screen" id="tv-screen">
+                        <div style="display: flex; justify-content: center; align-items: center; height: 100%; background: #333; color: white;">
+                            Caricamento...
+                        </div>
+                    </div>
+                    <div class="tv-controls">
+                        <button id="fullscreen-btn">Schermo Intero</button>
+                        <div class="stream-status" id="stream-status">
+                            <span class="dot"></span>
+                            <span>🔧 Modalità Test</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/tv-test.js"></script>
+</body>
+</html>
