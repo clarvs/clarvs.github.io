@@ -1,0 +1,245 @@
+body, html {
+    background: #000 !important;
+}
+
+.roster-page {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 3rem 2rem;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 188, 212, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.roster-page h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #00bcd4;
+    text-shadow: 0 0 8px #00bcd4, 0 0 16px #00bcd480;
+}
+
+/* Contenitore principale del roster */
+#roster-grid {
+    display: block;
+    width: 100%;
+}
+
+/* Sezioni del roster */
+.roster-section {
+    margin-bottom: 4rem;
+    width: 100%;
+    clear: both;
+    display: block;
+}
+
+.roster-section:last-child {
+    margin-bottom: 2rem;
+}
+
+.roster-section h2 {
+    color: #00bcd4;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
+    border-bottom: 2px solid rgba(0, 188, 212, 0.3);
+    padding-bottom: 0.5rem;
+}
+
+.roster-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+/* Assicura che ogni sezione inizi su una nuova riga */
+.roster-section .roster-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.member-card {
+    background-color: #111 !important;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 188, 212, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    flex: 0 0 auto;
+    width: 220px; /* Dimensione fissa più piccola per permettere più elementi per riga */
+}
+
+.member-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 188, 212, 0.1), transparent);
+    transition: left 0.5s ease;
+    z-index: 1;
+}
+
+.member-card:hover::before {
+    left: 100%;
+}
+
+.member-image {
+    height: 220px; /* Ridotta da 300px */
+    background-size: cover;
+    background-position: center;
+    background-color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 0.9rem;
+    position: relative;
+}
+
+.member-image::after {
+    content: 'Foto in arrivo...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.7;
+}
+
+.member-image[style*="background-image"]::after {
+    display: none;
+}
+
+.member-info {
+    padding: 1.5rem;
+}
+
+.member-info h3 {
+    color: var(--light-color);
+    margin-bottom: 0.5rem;
+}
+
+.member-info .role {
+    color: var(--primary-color);
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+}
+
+.member-info .game {
+    color: var(--light-color);
+    opacity: 0.8;
+    margin-bottom: 1rem;
+}
+
+.member-info .social-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.member-info .social-links a {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    padding: 0.5rem;
+    border-radius: 50%;
+    background: rgba(0, 188, 212, 0.1);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Colori specifici per ogni social */
+.member-info .social-links a.twitter:hover,
+.member-info .social-links a[href*="x.com"]:hover {
+    color: #000000 !important;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.member-info .social-links a.instagram:hover,
+.member-info .social-links a[href*="instagram.com"]:hover {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.member-info .social-links a.instagram:hover i,
+.member-info .social-links a[href*="instagram.com"]:hover i {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.member-info .social-links a.twitch:hover,
+.member-info .social-links a[href*="twitch.tv"]:hover {
+    color: #9146ff !important;
+    background: rgba(145, 70, 255, 0.1);
+}
+
+.member-info .social-links a.youtube:hover,
+.member-info .social-links a[href*="youtube.com"]:hover {
+    color: #ff0000 !important;
+    background: rgba(255, 0, 0, 0.1);
+}
+
+.member-info .social-links a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 188, 212, 0.3);
+}
+
+/* Stile per "no social" */
+.no-social {
+    color: #666;
+    font-style: italic;
+    font-size: 0.8rem;
+}
+
+/* Responsive migliorato */
+@media (max-width: 480px) {
+    .roster-page {
+        padding: 1rem;
+    }
+    
+    .member-card {
+        width: 180px; /* Ancora più piccole su mobile */
+    }
+    
+    .member-image {
+        height: 180px;
+    }
+    
+    .roster-grid {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .member-card {
+        width: 200px; /* Dimensione media su tablet */
+    }
+    
+    .member-image {
+        height: 200px;
+    }
+}
