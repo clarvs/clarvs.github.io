@@ -3,13 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clarvs Esport</title>
-    <script>
-        // Reindirizzamento automatico
-        window.location.href = 'pagine/home.html';
-    </script>
+    <title>Clarvs - Home</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/home.css">
+    <link rel="stylesheet" href="assets/css/animations.css">
+    <link rel="icon" href="assets/Icons/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Three.js per le particelle 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    Reindirizzamento in corso...
+    <!-- Loading Spinner -->
+    <div id="loading" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 26, 46, 0.9); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #6c5ce7; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-container">
+            <nav class="main-nav">
+                <div class="logo">
+                    <img src="assets/Icons/logo.png" alt="CLARVS Logo">
+                    <span>CLARVS</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html" class="nav-link active">Home</a></li>
+                    <li><a href="pagine/roster.html" class="nav-link">Roster</a></li>
+                    <li><a href="pagine/staff.html" class="nav-link">Staff</a></li>
+                    <li><a href="pagine/tv.html" class="nav-link">Clarvs TV</a></li>
+                </ul>
+                <button class="mobile-menu-btn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="home-page">
+        <!-- Canvas per particelle 3D -->
+        <canvas id="particles-canvas"></canvas>
+        
+        <section class="hero particles-bg" aria-labelledby="hero-heading">
+            <div class="hero-content animate-fade-in">
+                <h1 id="hero-heading" class="hero-title animate-slide-up">CLARVS</h1>
+                <p class="hero-subtitle animate-slide-up animate-delay-1">Il Futuro dell'Esport Italiano</p>
+                <div class="hero-buttons animate-fade-in animate-delay-2">
+                    <a href="pagine/roster.html" class="btn btn-primary">Scopri il Team</a>
+                    <a href="pagine/tv.html" class="btn btn-secondary">Clarvs TV</a>
+                </div>
+            </div>
+        </section>
+        
+        <section class="team-preview reveal" aria-labelledby="team-heading">
+            <div class="container">
+                <h2 id="team-heading">Il Nostro Team</h2>
+                <div class="slider-wrapper">
+                    <button class="slider-btn prev" onclick="prevSlide()">‹</button>
+                    <div class="slider-container">
+                        <div class="slider-track" id="slider-track">
+                            <!-- Slide 1 -->
+                            <div class="slide active">
+                                <div class="player-card">
+                                    <img src="assets/Images/players/calle.jpg" alt="Calle" loading="lazy">
+                                    <h3>Calle</h3>
+                                    <p>Pro Player</p>
+                                </div>
+                                <div class="player-card">
+                                    <img src="assets/Images/players/cryzee.jpg" alt="Cryzee" loading="lazy">
+                                    <h3>Cryzee</h3>
+                                    <p>Pro Player</p>
+                                </div>
+                                <div class="player-card">
+                                    <img src="assets/Images/players/pyre.jpg" alt="Pyre" loading="lazy">
+                                    <h3>Pyre</h3>
+                                    <p>Pro Player</p>
+                                </div>
+                                <div class="player-card">
+                                    <img src="assets/Images/players/zak.jpg" alt="Zak" loading="lazy">
+                                    <h3>Zak</h3>
+                                    <p>Pro Player</p>
+                                </div>
+                            </div>
+                            <!-- Slide 2 -->
+                            <div class="slide">
+                                <div class="player-card">
+                                    <img src="assets/Images/players/haxo.jpg" alt="Haxo" loading="lazy">
+                                    <h3>Haxo</h3>
+                                    <p>Talent</p>
+                                </div>
+                                <div class="player-card">
+                                    <img src="assets/Images/players/enxyn.jpg" alt="Enxyn" loading="lazy">
+                                    <h3>Enxyn</h3>
+                                    <p>Talent</p>
+                                </div>
+                                <div class="player-card">
+                                    <img src="assets/Images/players/loren.jpg" alt="Loren" loading="lazy">
+                                    <h3>Loren</h3>
+                                    <p>Academy</p>
+                                </div>
+                                <div class="player-card">
+                                    <img src="assets/Images/players/reva.jpg" alt="Reva" loading="lazy">
+                                    <h3>Reva</h3>
+                                    <p>Academy</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="slider-btn next" onclick="nextSlide()">›</button>
+                </div>
+                <div class="slider-dots">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="news-section reveal" aria-labelledby="news-heading" id="news">
+            <div class="container">
+                <h2 id="news-heading">Ultime Notizie</h2>
+                <div class="news-grid" id="news-grid">
+                    <!-- Le notizie verranno caricate dinamicamente da home.js -->
+                </div>
+            </div>
+        </section>
+        
+        <section class="social-feed reveal" aria-labelledby="social-heading">
+            <div class="container">
+                <h2 id="social-heading">Dai Nostri Social</h2>
+                <div class="social-tabs" role="tablist">
+                    <button class="social-tab active" data-platform="instagram" role="tab" aria-selected="true" aria-controls="instagram-panel">Instagram</button>
+                    <button class="social-tab" data-platform="twitter" role="tab" aria-selected="false" aria-controls="twitter-panel">X</button>
+                </div>
+                <div class="social-posts" id="social-posts">
+                    <!-- I post verranno caricati dinamicamente da socialfeed.js -->
+                </div>
+            </div>
+        </section>
+        
+        <section class="upcoming-events reveal" aria-labelledby="events-heading">
+            <div class="container">
+                <h2 id="events-heading">Prossimi Eventi</h2>
+                <div class="events-list" id="events-list">
+                    <!-- Gli eventi verranno caricati dinamicamente da home.js -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="social-links">
+                <a href="https://www.instagram.com/clarvs.gg/" target="_blank"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/@clarvs" target="_blank"><i class="fab fa-youtube"></i></a>
+                <a href="https://x.com/ClarvsTeam" target="_blank"><i class="fab fa-twitter"></i></a>
+            </div>
+            <p>&copy; 2019 Clarvs Esport. Tutti i diritti riservati.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/home.js"></script>
+    <script src="js/socialfeed.js"></script>
+    <script src="js/interactions.js"></script>
 </body>
 </html>
