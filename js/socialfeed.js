@@ -32,10 +32,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const twitterScript = document.createElement('script');
                 twitterScript.src = 'https://platform.twitter.com/widgets.js';
                 twitterScript.async = true;
+                twitterScript.charset = 'utf-8';
                 twitterScript.onload = () => {
-                    if (window.twttr) {
-                        window.twttr.widgets.load();
-                    }
+                    setTimeout(() => {
+                        if (window.twttr && window.twttr.widgets) {
+                            window.twttr.widgets.load();
+                        }
+                        resolve();
+                    }, 500);
+                };
+                twitterScript.onerror = () => {
+                    console.log('Errore caricamento Twitter script');
                     resolve();
                 };
                 document.body.appendChild(twitterScript);
@@ -47,15 +54,15 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadInstagramPosts() {
         socialPosts.innerHTML = `
             <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DIzQ2_goxGv/">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DPtTLWaCL2s/">
                 </blockquote>
             </div>
             <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DKDhj6JItwy/">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DPrOXAViI2K/">
                 </blockquote>
             </div>
             <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DKDtTgcozwg/">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DPouvaJCI15/">
                 </blockquote>
             </div>
         `;
@@ -65,23 +72,76 @@ document.addEventListener('DOMContentLoaded', function() {
     // Funzione per caricare i post di X
     async function loadTwitterPosts() {
         socialPosts.innerHTML = `
-            <div class="twitter-embed">
-                <blockquote class="twitter-tweet">
-                    <a href="https://twitter.com/ClarvsTeam/status/1910408782472946171"></a>
+            <div class="twitter-embed" style="margin-bottom: 20px;">
+                <blockquote class="twitter-tweet" data-theme="dark" data-link-color="#00ffff" data-dnt="true">
+                    <a href="https://twitter.com/Pantefn7/status/1978560891252527237?ref_src=twsrc%5Etfw">December 17, 2024</a>
                 </blockquote>
             </div>
-            <div class="twitter-embed">
-                <blockquote class="twitter-tweet">
-                    <a href="https://twitter.com/Debian_fn/status/1931656484368077141"></a>
+            <div class="twitter-embed" style="margin-bottom: 20px;">
+                <blockquote class="twitter-tweet" data-theme="dark" data-link-color="#00ffff" data-dnt="true">
+                    <a href="https://twitter.com/Pantefn7/status/1977046923585470486?ref_src=twsrc%5Etfw">December 16, 2024</a>
                 </blockquote>
             </div>
-            <div class="twitter-embed">
-                <blockquote class="twitter-tweet">
-                    <a href="https://twitter.com/Pantefn7/status/1927134123174363641"></a>
+            <div class="twitter-embed" style="margin-bottom: 20px;">
+                <blockquote class="twitter-tweet" data-theme="dark" data-link-color="#00ffff" data-dnt="true">
+                    <a href="https://twitter.com/Pantefn7/status/1969435357469876732?ref_src=twsrc%5Etfw">December 15, 2024</a>
                 </blockquote>
             </div>
         `;
-        await reloadScripts('twitter');
+        
+        // Rimuovi script esistente
+        const oldScript = document.querySelector('script[src*="platform.twitter.com/widgets.js"]');
+        if (oldScript) oldScript.remove();
+        
+        // Carica script Twitter
+        const script = document.createElement('script');
+        script.src = 'https://platform.twitter.com/widgets.js';
+        script.async = true;
+        script.charset = 'utf-8';
+        
+        script.onload = () => {
+            console.log('Twitter script caricato');
+            if (window.twttr && window.twttr.widgets) {
+                window.twttr.widgets.load().then(() => {
+                    console.log('Twitter widgets caricati');
+                });
+            }
+        };
+        
+        script.onerror = () => {
+            console.error('Errore nel caricamento script Twitter');
+            // Fallback: mostra messaggio di errore
+            socialPosts.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    <p>⚠️ Impossibile caricare i tweet</p>
+                    <p>Prova a ricaricare la pagina o controlla la connessione</p>
+                    <div style="margin-top: 20px;">
+                        <a href="https://x.com/Pantefn7" target="_blank" style="color: #00ffff; text-decoration: none;">
+                            🐦 Visita il profilo X di Pante
+                        </a>
+                    </div>
+                </div>
+            `;
+        };
+        
+        document.head.appendChild(script);
+        
+        // Timeout di sicurezza
+        setTimeout(() => {
+            const tweets = document.querySelectorAll('.twitter-tweet');
+            tweets.forEach(tweet => {
+                if (tweet.innerHTML.includes('Caricamento') || tweet.children.length <= 1) {
+                    tweet.innerHTML = `
+                        <div style="padding: 20px; border: 1px solid #333; border-radius: 10px; background: #111;">
+                            <p style="color: #888; margin: 0;">❌ Tweet non caricato</p>
+                            <a href="${tweet.querySelector('a').href}" target="_blank" style="color: #00ffff;">
+                                Visualizza su X →
+                            </a>
+                        </div>
+                    `;
+                }
+            });
+        }, 5000);
     }
 
     // Gestione dei tab
