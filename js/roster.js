@@ -57,6 +57,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     youtube: 'https://www.youtube.com/@BETTAtv13',
                     twitch: 'https://www.twitch.tv/bettatv'
                 }
+            },
+            {
+                name: 'Mafix',
+                role: 'Content Creator',
+                game: 'Content Creator',
+                image: '../assets/Images/players/mafix.jpg',
+                social: {
+                    tiktok: 'https://www.tiktok.com/@mafixfnrr?_r=1&_t=ZN-919L650SA5u',
+                    instagram: 'https://www.instagram.com/mafix_w/'
+                }
             }
         ]
     };
@@ -70,7 +80,8 @@ document.addEventListener('DOMContentLoaded', function() {
             instagram: 'fab fa-instagram',
             twitch: 'fab fa-twitch',
             youtube: 'fab fa-youtube',
-            discord: 'fab fa-discord'
+            discord: 'fab fa-discord',
+            tiktok: 'fab fa-tiktok'
         };
         return icons[platform] || 'fas fa-link';
     }

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarvs Champions Cup - CLARVS</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/champions-cup.css">
+    <link rel="stylesheet" href="../assets/css/animations.css">
+    <link rel="icon" href="../assets/Icons/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Font simile a Fortnite -->
+    <link href="https://fonts.googleapis.com/css2?family=Burbank+Big+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+    <!-- Three.js per le particelle 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="main-header champions-cup-header">
+        <div class="header-container">
+            <nav class="main-nav champions-cup-nav">
+                <div class="logo">
+                    <img src="../assets/Icons/logo.png" alt="CLARVS Logo">
+                    <span>CLARVS</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="../index.html" class="nav-link">Home</a></li>
+                    <li><a href="roster.html" class="nav-link">Roster</a></li>
+                    <li><a href="staff.html" class="nav-link">Staff</a></li>
+                    <li><a href="champions-cup.html" class="nav-link active">Champions Cup</a></li>
+                    <li><a href="tv.html" class="nav-link">Clarvs TV</a></li>
+                </ul>
+                <button class="mobile-menu-btn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="champions-cup-page">
+        <!-- Hero Section -->
+        <section class="cup-hero">
+            <div class="hero-content animate-fade-in">
+                <!-- Titolo rimosso come richiesto -->
+                <!-- Elemento decorativo centrale (gestito via CSS) -->
+                <div class="hero-glow"></div>
+            </div>
+        </section>
+
+        <!-- Sezione Lobby Qualificazioni -->
+        <section class="lobby-section reveal">
+            <div class="container">
+                <h2 class="section-title">Lobby Qualificazioni</h2>
+                <div class="lobby-grid">
+                    <!-- Lobby 1 -->
+                    <div class="lobby-card" onclick="openRanking(1)">
+                        <h3>Lobby 1</h3>
+                        <div class="lobby-info">
+                            <span class="lobby-date">Venerdì 5 Dicembre</span>
+                            <span class="lobby-time"><i class="fas fa-clock"></i> 15:15</span>
+                        </div>
+                        <button class="view-ranking-btn">Vedi Classifica</button>
+                    </div>
+
+                    <!-- Lobby 2 -->
+                    <div class="lobby-card" onclick="openRanking(2)">
+                        <h3>Lobby 2</h3>
+                        <div class="lobby-info">
+                            <span class="lobby-date">Venerdì 5 Dicembre</span>
+                            <span class="lobby-time"><i class="fas fa-clock"></i> 17:15</span>
+                        </div>
+                        <button class="view-ranking-btn">Vedi Classifica</button>
+                    </div>
+
+                    <!-- Lobby 3 -->
+                    <div class="lobby-card" onclick="openRanking(3)">
+                        <h3>Lobby 3</h3>
+                        <div class="lobby-info">
+                            <span class="lobby-date">Sabato 6 Dicembre</span>
+                            <span class="lobby-time"><i class="fas fa-clock"></i> 14:45</span>
+                        </div>
+                        <button class="view-ranking-btn">Vedi Classifica</button>
+                    </div>
+
+                    <!-- Lobby 4 -->
+                    <div class="lobby-card" onclick="openRanking(4)">
+                        <h3>Lobby 4</h3>
+                        <div class="lobby-info">
+                            <span class="lobby-date">Sabato 6 Dicembre</span>
+                            <span class="lobby-time"><i class="fas fa-clock"></i> 16:30</span>
+                        </div>
+                        <button class="view-ranking-btn">Vedi Classifica</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal per la classifica -->
+    <div class="modal-overlay" id="rankingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Lobby 1 - Classifica</h2>
+                <button class="close-modal" onclick="closeRanking()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Giocatore</th>
+                            <th>Punti</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingBody">
+                        <!-- Verrà popolato da JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="dot dot-green"></span>
+                    <span>Qualificati (Top 12)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="dot dot-red"></span>
+                    <span>Eliminati</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/main.js"></script>
+    <script src="../js/interactions.js"></script>
+    <script>
+        // Dati dei giocatori per le lobby
+        const lobbyData = {
+            1: [
+                "Iceleoh", "Kler", "Nitro", "Pallux", "Certyc", 
+                "Fr3nk", "Ciuco", "Anass", "Axy", "Sabbia", 
+                "Conso", "Jeki Doggo", "Pingu", "Snakko", "Mafix", 
+                "DelUser", "Ugo"
+            ],
+            2: [
+                "Aleshawn", "Rhou", "Sapphire", "Gaebel", "Zqler", 
+                "Fuego", "Roby", "Lelli", "Flqrix", "Golden", 
+                "Bertan", "Pante", "Cinghiale", "Soguaro", "Matthias", 
+                "Gabbs", "Kiripip"
+            ],
+            3: [
+                "Betta", "Mattemu", "Manu", "Malar", "GD8 Super", 
+                "Bamba", "Takestach", "Gidane", "Squeezy", "Giux", 
+                "Ared", "Rxstek", "Salva", "Petrito", "Verza", 
+                "Riky", "Gyovix"
+            ],
+            4: [
+                "Davix", "Ryzee", "Maka", "Haxo", "Skizi", 
+                "Beghi", "Bortex", "Fastly", "Anti", "Leif", 
+                "Feffo", "Kratos", "Kingkong", "Das_toxic", "Matto", 
+                "Minijust", "Petrox"
+            ]
+        };
+
+        // Funzioni per il modal della classifica
+        function openRanking(lobbyNumber) {
+            const modal = document.getElementById('rankingModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const rankingBody = document.getElementById('rankingBody');
+            
+            modalTitle.textContent = `Lobby ${lobbyNumber} - Classifica`;
+            
+            // Recupera i giocatori per questa lobby o usa placeholder
+            const players = lobbyData[lobbyNumber] || Array(17).fill("-");
+            
+            let html = '';
+            // Genera righe basate sulla lunghezza dell'array (o 17 fisso)
+            for (let i = 0; i < 17; i++) {
+                const rank = i + 1;
+                const playerName = players[i] || "-";
+                const isQualified = rank <= 12;
+                const rowClass = isQualified ? 'rank-qualified' : 'rank-eliminated';
+                const qualificationLine = rank === 12 ? ' qualification-line' : '';
+                
+                html += `
+                    <tr class="${rowClass}${qualificationLine}">
+                        <td class="rank-cell">${rank}°</td>
+                        <td class="player-cell">${playerName}</td>
+                        <td class="points-cell">0</td>
+                    </tr>
+                `;
+            }
+            
+            rankingBody.innerHTML = html;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeRanking() {
+            const modal = document.getElementById('rankingModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Chiudi modal cliccando fuori
+        document.getElementById('rankingModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRanking();
+            }
+        });
+
+        // Chiudi con ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRanking();
+            }
+        });
+
+        // Animazione reveal per le sezioni
+        function reveal() {
+            const reveals = document.querySelectorAll('.reveal');
+            reveals.forEach(element => {
+                const windowHeight = window.innerHeight;
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < windowHeight - elementVisible) {
+                    element.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', reveal);
+        window.addEventListener('load', reveal);
+    </script>
+</body>
+</html>
