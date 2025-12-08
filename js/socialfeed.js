@@ -5,6 +5,53 @@ document.addEventListener('DOMContentLoaded', function() {
     const socialPosts = document.getElementById('social-posts');
     let currentPlatform = 'instagram';
     
+    // Dati dei post social (mock data)
+    const socialData = {
+        instagram: [
+            {
+                id: 1,
+                image: '../assets/images/social/instagram1.jpg',
+                caption: 'Post Instagram 1',
+                likes: 14,
+                link: 'https://www.instagram.com/p/DR7kAgcCGDi/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA=='
+            },
+            {
+                id: 2,
+                image: '../assets/images/social/instagram2.jpg',
+                caption: 'Post Instagram 2',
+                likes: 33,
+                link: 'https://www.instagram.com/p/DR7j85QCBSn/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA=='
+            },
+            {
+                id: 3,
+                image: '../assets/images/social/instagram3.jpg',
+                caption: 'Post Instagram 3',
+                likes: 11,
+                link: 'https://www.instagram.com/p/DR5DFHtCFjX/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA=='
+            }
+        ],
+        twitter: [
+            {
+                id: 1,
+                content: 'Primo tweet di esempio',
+                link: 'https://twitter.com/Pantefn7/status/1978560891252527237?ref_src=twsrc%5Etfw',
+                date: 'December 17, 2024'
+            },
+            {
+                id: 2,
+                content: 'Secondo tweet di esempio',
+                link: 'https://twitter.com/Pantefn7/status/1977046923585470486?ref_src=twsrc%5Etfw',
+                date: 'December 16, 2024'
+            },
+            {
+                id: 3,
+                content: 'Terzo tweet di esempio',
+                link: 'https://twitter.com/Pantefn7/status/1969435357469876732?ref_src=twsrc%5Etfw',
+                date: 'December 15, 2024'
+            }
+        ]
+    };
+    
     // Funzione per ricaricare gli script
     function reloadScripts(platform) {
         return new Promise((resolve) => {
@@ -54,15 +101,15 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadInstagramPosts() {
         socialPosts.innerHTML = `
             <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DPtTLWaCL2s/">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DR7kAgcCGDi/">
                 </blockquote>
             </div>
             <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DPrOXAViI2K/">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DR7j85QCBSn/">
                 </blockquote>
             </div>
             <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DPouvaJCI15/">
+                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DR5DFHtCFjX/">
                 </blockquote>
             </div>
         `;
@@ -144,6 +191,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
+    // Funzione per caricare i post social
+    function loadSocialPosts(platform) {
+        const postsContainer = document.getElementById('social-posts');
+        if (!postsContainer) return;
+
+        const posts = socialData[platform] || [];
+        
+        postsContainer.innerHTML = posts.map(post => `
+            <div class="social-post animate-fade-in">
+                <a href="${post.link}" target="_blank" rel="noopener noreferrer">
+                    <img src="${post.image}" alt="${post.caption}" loading="lazy">
+                    <div class="post-overlay">
+                        <div class="post-stats">
+                            <span><i class="fas fa-heart"></i> ${post.likes}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        `).join('');
+    }
+
     // Gestione dei tab
     const socialTabs = document.querySelectorAll('.social-tab');
     socialTabs.forEach(tab => {
@@ -167,6 +235,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 await loadInstagramPosts();
             } else if (platform === 'twitter') {
                 await loadTwitterPosts();
+            } else {
+                loadSocialPosts(platform);
             }
         });
     });

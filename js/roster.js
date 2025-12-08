@@ -21,31 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     twitter: 'https://x.com/iceLeoh',
                     instagram: 'https://www.instagram.com/iceleoh?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=='
                 }
-            },
-            {
-                name: 'Pante',
-                role: 'Pro Player',
-                game: 'Fortnite',
-                image: '../assets/Images/players/pante.jpg',
-                social: {
-                    twitter: 'https://x.com/Pantefn7',
-                    instagram: 'https://www.instagram.com/pantefn_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==',
-                    youtube: 'https://www.youtube.com/@pantefn'
-                }
             }
         ],
         talents: [],
-        academy: [
-            {
-                name: 'Loran',
-                role: 'Academy',
-                game: 'Fortnite',
-                image: '../assets/Images/players/loren.jpg',
-                social: {
-                    twitter: 'https://x.com/LoranceFN'
-                }
-            }
-        ],
+        academy: [],
         contentCreator: [
             {
                 name: 'BETTAtv',

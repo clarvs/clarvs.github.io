@@ -136,31 +136,83 @@
     <script src="../js/main.js"></script>
     <script src="../js/interactions.js"></script>
     <script>
-        // Dati dei giocatori per le lobby
+        // Dati dei giocatori per le lobby (nome e punti)
         const lobbyData = {
             1: [
-                "Iceleoh", "Kler", "Nitro", "Pallux", "Certyc", 
-                "Fr3nk", "Ciuco", "Anass", "Axy", "Sabbia", 
-                "Conso", "Jeki Doggo", "Pingu", "Snakko", "Mafix", 
-                "DelUser", "Ugo"
+                { name: "Iceleoh", points: 88 },
+                { name: "Mafix", points: 76 },
+                { name: "Ciuco", points: 74 },
+                { name: "Fr3nk", points: 51 },
+                { name: "Kler", points: 50 },
+                { name: "Nitro", points: 30 },
+                { name: "Xmatto", points: 23 },
+                { name: "Pallux", points: 20 },
+                { name: "Ugo", points: 13 },
+                { name: "GD8 Super", points: 12 },
+                { name: "Jeki Doggo", points: 0 },
+                { name: "P1ngu", points: 0 },
+                { name: "Sabbia", points: 0 },
+                { name: "Axy", points: 0 },
+                { name: "Certyc", points: 0 },
+                { name: "Anass", points: 0 },
+                { name: "Conso", points: 0 }
             ],
             2: [
-                "Aleshawn", "Rhou", "Sapphire", "Gaebel", "Zqler", 
-                "Fuego", "Roby", "Lelli", "Flqrix", "Golden", 
-                "Bertan", "Pante", "Cinghiale", "Soguaro", "Matthias", 
-                "Gabbs", "Kiripip"
+                { name: "Sapphire", points: 74 },
+                { name: "Pante", points: 74 },
+                { name: "Flqrix", points: 74 },
+                { name: "Gabbs", points: 63 },
+                { name: "Lelli X", points: 56 },
+                { name: "Bertan", points: 46 },
+                { name: "Gae_bel", points: 46 },
+                { name: "Roby", points: 32 },
+                { name: "Aleshawn", points: 32 },
+                { name: "Cinghiale", points: 30 },
+                { name: "Soguaro", points: 24 },
+                { name: "Zqler", points: 0 },
+                { name: "Kiripip", points: 0 },
+                { name: "Golden", points: 0 },
+                { name: "Rhoufn", points: 0 },
+                { name: "Stallone", points: 0 },
+                { name: "Matthias", points: 0 }
             ],
             3: [
-                "Betta", "Mattemu", "Manu", "Malar", "GD8 Super", 
-                "Bamba", "Takestach", "Gidane", "Squeezy", "Giux", 
-                "Ared", "Rxstek", "Salva", "Petrito", "Verza", 
-                "Riky", "Gyovix"
+                { name: "Cive", points: 93 },
+                { name: "Verza", points: 73 },
+                { name: "Gidane", points: 50 },
+                { name: "Giux", points: 46 },
+                { name: "Malar", points: 43 },
+                { name: "Betta", points: 36 },
+                { name: "Gyovix", points: 34 },
+                { name: "Squeezy", points: 26 },
+                { name: "Rxstek", points: 21 },
+                { name: "Petrito", points: 6 },
+                { name: "Takestach", points: 0 },
+                { name: "Mattemu", points: 0 },
+                { name: "Salva", points: 0 },
+                { name: "Ared", points: 0 },
+                { name: "Manu", points: 0 },
+                { name: "Riky2078", points: 0 },
+                { name: "Bamba", points: 0 }
             ],
             4: [
-                "Davix", "Ryzee", "Maka", "Haxo", "Skizi", 
-                "Beghi", "Bortex", "Fastly", "Anti", "Leif", 
-                "Feffo", "Kratos", "Kingkong", "Das_toxic", "Matto", 
-                "Minijust", "Petrox"
+                { name: "Minijust", points: 77 },
+                { name: "Maka", points: 59 },
+                { name: "Petrox", points: 56 },
+                { name: "Zbeghi", points: 52 },
+                { name: "Leif", points: 45 },
+                { name: "Haxo", points: 30 },
+                { name: "Kratos", points: 20 },
+                { name: "Matto", points: 16 },
+                { name: "Davix", points: 10 },
+                { name: "Anti", points: 0 },
+                { name: "Bortex", points: 0 },
+                { name: "Feffo", points: 0 },
+                { name: "Ryzee", points: 0 },
+                { name: "Skizi", points: 0 },
+                { name: "Das_toxic", points: 0 },
+                { name: "King Kong", points: 0 },
+                { name: "Fastly", points: 0 }
             ]
         };
 
@@ -172,14 +224,16 @@
             
             modalTitle.textContent = `Lobby ${lobbyNumber} - Classifica`;
             
-            // Recupera i giocatori per questa lobby o usa placeholder
-            const players = lobbyData[lobbyNumber] || Array(17).fill("-");
+            // Recupera i giocatori per questa lobby
+            const players = lobbyData[lobbyNumber] || [];
+            
+            // Ordina i giocatori per punti (dal più alto al più basso)
+            const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
             
             let html = '';
-            // Genera righe basate sulla lunghezza dell'array (o 17 fisso)
-            for (let i = 0; i < 17; i++) {
-                const rank = i + 1;
-                const playerName = players[i] || "-";
+            // Genera righe basate sui giocatori ordinati
+            sortedPlayers.forEach((player, index) => {
+                const rank = index + 1;
                 const isQualified = rank <= 12;
                 const rowClass = isQualified ? 'rank-qualified' : 'rank-eliminated';
                 const qualificationLine = rank === 12 ? ' qualification-line' : '';
@@ -187,11 +241,11 @@
                 html += `
                     <tr class="${rowClass}${qualificationLine}">
                         <td class="rank-cell">${rank}°</td>
-                        <td class="player-cell">${playerName}</td>
-                        <td class="points-cell">0</td>
+                        <td class="player-cell">${player.name}</td>
+                        <td class="points-cell">${player.points}</td>
                     </tr>
                 `;
-            }
+            });
             
             rankingBody.innerHTML = html;
             modal.classList.add('active');
