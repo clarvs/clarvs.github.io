@@ -52,21 +52,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- CONFIGURAZIONE TV SINCRONIZZATA ---
     // Array degli ID video della playlist YouTube
     const playlistVideos = [
-        'Tl5Z8aqEcMU', 'QBr_0RzUJ3E', 'eFYgX4xwcxI', 'wlk1wxWgMTE', 'rQDnrlmv54E',
-        'ePdTfo382Ro', 'ShwlHQ3n4D0', 'F4kQH_Pmn0Y', 'nRRZtX9skw', 'CicIEmh0uhY',
-        '7UIelBCPgiM', 'nP5rqzJbP1s', 'rh88yZ9Gj-4', 'EKTjq6anV4M', 'koa1GICyPxg',
-        'ucdZtsdl7Bo', 'koGqeb-GVtk', '0VZrU9WkIl0', 'L18VUJ7_b-E', 'Fi7ciPu_bAY',
-        'KoYTH4c-IY8', 'A_bIHfNCR54', '7x-2_1x66Z4', 'Zkn4MYkLdtw', 'qSBAeBtsJgo',
-        'UvZk5y5ai78', 'E1CVz6Zku7c', 'orqDVsYulLY', 'WvmTqk5LufY', 'K-W3-smxo4g',
-        '-9csAIF5OEU', 'gETwja_8ZO8', 'xefdWCxCvZM', 'KhWs5rXYzu4', 'SshJW8opNkc',
-        'HD_xogNYVEs', 'h1Z82_BPuHM'
+        'Tl5Z8aqEcMU', '-9csAIF5OEU', 'QBr_0RzUJ3E', 'rQDnrlmv54E', 'rbSrgQtWUek', 
+        '79N8-KZ6FxM', 'L47q-WED63A', '91HNIfrBLRc', 'qwNO1pTEag0', 'yhujiXRAWM4', 
+        'amZ4DqF-2f4', 'gnqqraV_sJ8', '7UIelBCPgiM', 'SQKzsx2QGTI', 'nP5rqzJbP1s', 
+        'CicIEmh0uhY', 'rh88yZ9Gj-4', 'EKTjq6anV4M', 'ucdZtsdl7Bo', '0VZrU9WkIl0', 
+        'L18VUJ7_b-E', 'Fi7ciPu_bAY', 'KoYTH4c-IY8', 'A_bIHfNCR54', '7x-2_1x66Z4', 
+        'Zkn4MYkLdtw', 'qSBAeBtsJgo', 'UvZk5y5ai78', 'E1CVz6Zku7c', 'WvmTqk5LufY', 
+        'K-W3-smxo4g', 'gETwja_8ZO8', 'xefdWCxCvZM'
     ];
     
     // Durate in secondi di ciascun video (nell'ordine della playlist)
     const durations = [
-        20862, 11317, 600, 423, 1678, 418, 501, 1041, 726, 1099, 856, 949, 508, 644, 
-        487, 803, 198, 1329, 1550, 567, 1465, 2039, 2599, 3331, 915, 1463, 1294, 365, 
-        212, 137, 290, 159, 1709, 13211, 14592, 10705, 10524
+        20862, 11317, 1678, 4818, 5813, 10246, 11777, 9574, 9257, 8248, 9086, 856, 
+        910, 949, 1099, 508, 644, 803, 1329, 1550, 567, 1465, 2039, 2599, 3331, 
+        915, 1463, 1294, 212, 137, 290, 159, 1709
     ];
     
     // Orario di partenza della playlist (00:00:00 UTC)
