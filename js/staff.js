@@ -61,9 +61,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function getRoleColor(role) {
         const colors = {
             'Leader': '#FFD700',
-            'Staff': '#2563eb'
+            'Staff': '#00bcd4'
         };
-        return colors[role] || '#2563eb';
+        return colors[role] || '#00bcd4';
     }
     
     // Crea le sezioni

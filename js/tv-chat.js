@@ -52,9 +52,7 @@ class ClarvsChat {
             this.socket = io(serverUrl, {
                 transports: ['websocket', 'polling'],
                 timeout: 10000,
-                forceNew: true,
-                reconnectionAttempts: 3,
-                reconnectionDelay: 5000
+                forceNew: true
             });
             
             this.socket.on('connect', () => {
@@ -71,12 +69,7 @@ class ClarvsChat {
             
             this.socket.on('connect_error', (error) => {
                 console.error('[Clarvs Chat] ❌ Errore connessione:', error);
-            });
-
-            this.socket.on('reconnect_failed', () => {
-                console.warn('[Clarvs Chat] Server non disponibile (GitHub Pages mode)');
-                this.socket.disconnect();
-                this.showOfflineMessage();
+                this.showError('Impossibile connettersi alla chat');
             });
             
             // Ricevi messaggi

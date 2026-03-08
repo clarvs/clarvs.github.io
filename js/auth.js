@@ -4,6 +4,8 @@ class AuthSystem {
         this.isLoggedIn = localStorage.getItem('clarvs_auth') === 'true';
         this.currentUser = localStorage.getItem('clarvs_user') || null;
         this.staffMembers = ['pyre', 'anass', 'calle', 'zak', 'enxyn', 'matto', 'bamba'];
+        this.staffPassword = '123'; // Password uguale per tutti i membri staff
+        
         this.init();
     }
     
@@ -84,7 +86,7 @@ class AuthSystem {
         // Event listener per il form di login
         document.getElementById('login-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
-            this.handleLogin(); // async, gestisce errori internamente
+            this.handleLogin();
         });
     }
     
@@ -99,42 +101,35 @@ class AuthSystem {
         document.getElementById('auth-error').style.display = 'none';
     }
     
-    async handleLogin() {
+    handleLogin() {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
-
+        const errorDiv = document.getElementById('auth-error');
+        
         if (!username) {
             this.showError('Seleziona un username');
             return;
         }
-
-        const submitBtn = document.querySelector('#login-form button[type="submit"]');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Accesso...'; }
-
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-
-            if (res.ok) {
-                this.isLoggedIn = true;
-                this.currentUser = username;
-                localStorage.setItem('clarvs_auth', 'true');
-                localStorage.setItem('clarvs_user', username);
-                this.hideLoginModal();
-                this.updateUI();
-                this.showSuccessMessage(`Benvenuto, ${username}!`);
-            } else {
-                const err = await res.json().catch(() => ({}));
-                this.showError(err.error || 'Errore login');
-            }
-        } catch {
-            this.showError('Server non disponibile. Avvia node server.js per accedere.');
-        } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Accedi'; }
+        
+        if (!this.staffMembers.includes(username)) {
+            this.showError('Username non autorizzato');
+            return;
         }
+        
+        if (password !== this.staffPassword) {
+            this.showError('Password incorretta');
+            return;
+        }
+        
+        // Login eseguito con successo
+        this.isLoggedIn = true;
+        this.currentUser = username;
+        localStorage.setItem('clarvs_auth', 'true');
+        localStorage.setItem('clarvs_user', username);
+        
+        this.hideLoginModal();
+        this.updateUI();
+        this.showSuccessMessage(`Benvenuto, ${username}!`);
     }
     
     showError(message) {
@@ -189,9 +184,9 @@ class AuthSystem {
     }
     
     updateNavigationVisibility() {
-        // Aggiorna la visibilità del link admin in tutte le pagine
-        const adminLinks = document.querySelectorAll('a[href*="admin.html"]');
-        adminLinks.forEach(link => {
+        // Aggiorna la visibilità del link scouting in tutte le pagine
+        const scoutingLinks = document.querySelectorAll('a[href*="scouting.html"]');
+        scoutingLinks.forEach(link => {
             const parentLi = link.closest('li');
             if (parentLi) {
                 parentLi.style.display = this.isLoggedIn ? 'block' : 'none';

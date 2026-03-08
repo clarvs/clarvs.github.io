@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderer.setClearColor(0x000000, 0);
         
         // Configurazione particelle ottimizzata
-        const particleCount = window.innerWidth < 768 ? 1200 : 2500;
+        const particleCount = window.innerWidth < 768 ? 800 : 1500; // Meno particelle su mobile
         const positions = new Float32Array(particleCount * 3);
         const velocities = new Float32Array(particleCount * 3);
         const colors = new Float32Array(particleCount * 3);
@@ -37,32 +37,32 @@ document.addEventListener('DOMContentLoaded', function() {
             const i3 = i * 3;
             
             // Posizioni
-            positions[i3] = (Math.random() - 0.5) * 3000;
-            positions[i3 + 1] = (Math.random() - 0.5) * 2000;
-            positions[i3 + 2] = (Math.random() - 0.5) * 800;
+            positions[i3] = (Math.random() - 0.5) * 2000;
+            positions[i3 + 1] = (Math.random() - 0.5) * 1000;
+            positions[i3 + 2] = (Math.random() - 0.5) * 1000;
             
             // Velocità
             velocities[i3] = (Math.random() - 0.5) * 0.5;
             velocities[i3 + 1] = (Math.random() - 0.5) * 0.5;
             velocities[i3 + 2] = (Math.random() - 0.5) * 0.5;
             
-            // Colori (palette blue)
+            // Colori (palette cyan-blue)
             const colorVariant = Math.random();
-            if (colorVariant < 0.5) {
-                // Blu elettrico #3b82f6
-                colors[i3]     = 0.23;
-                colors[i3 + 1] = 0.51;
-                colors[i3 + 2] = 0.96;
+            if (colorVariant < 0.6) {
+                // Cyan principale
+                colors[i3] = 0;     // R
+                colors[i3 + 1] = 1; // G
+                colors[i3 + 2] = 1; // B
             } else if (colorVariant < 0.8) {
-                // Blu chiaro #60a5fa
-                colors[i3]     = 0.37;
-                colors[i3 + 1] = 0.65;
-                colors[i3 + 2] = 0.98;
+                // Blu
+                colors[i3] = 0.2;   // R
+                colors[i3 + 1] = 0.6; // G
+                colors[i3 + 2] = 1;   // B
             } else {
                 // Bianco per accenti
-                colors[i3]     = 0.85;
-                colors[i3 + 1] = 0.90;
-                colors[i3 + 2] = 1.0;
+                colors[i3] = 1;     // R
+                colors[i3 + 1] = 1; // G
+                colors[i3 + 2] = 1; // B
             }
         }
         
@@ -73,10 +73,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Materiale ottimizzato
         const material = new THREE.PointsMaterial({
-            size: 3,
+            size: 2,
             vertexColors: true,
             transparent: true,
-            opacity: 0.9,
+            opacity: 0.8,
             blending: THREE.AdditiveBlending,
             sizeAttenuation: true
         });
@@ -124,9 +124,9 @@ document.addEventListener('DOMContentLoaded', function() {
             positions[i + 2] += velocities[i + 2];
             
             // Rimbalzo ai bordi
-            if (Math.abs(positions[i]) > 1500) velocities[i] *= -1;
-            if (Math.abs(positions[i + 1]) > 1000) velocities[i + 1] *= -1;
-            if (Math.abs(positions[i + 2]) > 400) velocities[i + 2] *= -1;
+            if (Math.abs(positions[i]) > 1000) velocities[i] *= -1;
+            if (Math.abs(positions[i + 1]) > 500) velocities[i + 1] *= -1;
+            if (Math.abs(positions[i + 2]) > 500) velocities[i + 2] *= -1;
         }
         
         particleSystem.geometry.attributes.position.needsUpdate = true;
