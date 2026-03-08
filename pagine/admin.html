@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarvs - Admin</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/admin.css">
+    <link rel="stylesheet" href="../assets/css/animations.css">
+    <link rel="stylesheet" href="../assets/css/polish.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="../assets/Icons/favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+    <!-- Access Control -->
+    <div id="access-denied" class="access-denied" style="display: none;">
+        <div class="access-denied-content">
+            <div class="access-denied-icon"><i class="fas fa-lock"></i></div>
+            <h2>Accesso Riservato</h2>
+            <p>Questa sezione è riservata esclusivamente ai membri dello staff di Clarvs.</p>
+            <p>Effettua il login per accedere al pannello admin.</p>
+            <button id="login-redirect" class="access-btn">
+                <i class="fas fa-sign-in-alt"></i> Accedi
+            </button>
+            <a href="../index.html" class="access-btn secondary">
+                <i class="fas fa-home"></i> Torna alla Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav main-nav">
+            <div class="logo">
+                <img src="../assets/Icons/logo.png" alt="CLARVS Logo">
+                <span>CLARVS</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="roster.html" class="nav-link">Roster</a></li>
+                <li><a href="staff.html" class="nav-link">Staff</a></li>
+                <li><a href="tv.html" class="nav-link">Clarvs TV</a></li>
+                <li class="staff-only" style="display: none;">
+                    <a href="admin.html" class="nav-link active">Admin</a>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Contenuto principale -->
+    <main class="main-container staff-only" style="display: none;">
+        <div class="page-content">
+            <div class="admin-page">
+
+                <!-- Header Admin -->
+                <div class="admin-header">
+                    <h1 class="animate-text-glow animate-slide-up">
+                        <i class="fas fa-shield-alt"></i> Pannello Admin
+                    </h1>
+                    <div class="staff-welcome" id="staff-welcome">
+                        <p>Pannello di amministrazione Clarvs</p>
+                    </div>
+                </div>
+
+                <!-- Tab Buttons -->
+                <div class="admin-tabs">
+                    <button class="admin-tab active" data-tab="roster">
+                        <i class="fas fa-users"></i> Roster
+                    </button>
+                    <button class="admin-tab" data-tab="scouting">
+                        <i class="fas fa-crosshairs"></i> Scouting
+                    </button>
+                    <button class="admin-tab" data-tab="tv">
+                        <i class="fas fa-tv"></i> Clarvs TV
+                    </button>
+                    <button class="admin-tab" data-tab="home">
+                        <i class="fas fa-home"></i> Home
+                    </button>
+                </div>
+
+                <!-- ── TAB ROSTER ── -->
+                <div id="tab-roster" class="tab-content active">
+
+                    <div class="scouting-section animate-fade-in">
+                        <div class="section-box">
+                            <div class="roster-table-header">
+                                <h2><i class="fas fa-users"></i> Gestione Roster</h2>
+                                <button id="add-player-btn" class="run-btn">
+                                    <i class="fas fa-plus"></i> Aggiungi Player
+                                </button>
+                            </div>
+
+                            <div class="roster-table-wrapper">
+                                <table class="roster-admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>Categoria</th>
+                                            <th>Ruolo</th>
+                                            <th>Social</th>
+                                            <th>Tracker</th>
+                                            <th>Azioni</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="roster-tbody">
+                                        <tr><td colspan="6" style="text-align:center;color:#888;padding:2rem">Caricamento...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Forza Scansione Stats -->
+                    <div class="scouting-section animate-fade-in" style="margin-top:1.5rem">
+                        <div class="section-box">
+                            <div class="roster-table-header">
+                                <h2><i class="fas fa-sync-alt"></i> Statistiche Giocatori (FN Tracker)</h2>
+                                <button id="force-scan-btn" class="run-btn">
+                                    <i class="fas fa-sync-alt"></i> Forza Scansione
+                                </button>
+                            </div>
+                            <div id="force-scan-status" class="scraping-status" style="margin-top:0.75rem"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── TAB SCOUTING ── -->
+                <div id="tab-scouting" class="tab-content" style="display:none;">
+
+                    <!-- SEZIONE 1: Configurazione URL -->
+                    <div class="scouting-section animate-fade-in animate-delay-1">
+                        <div class="section-box">
+                            <h2><i class="fas fa-link"></i> Classifiche da Monitorare</h2>
+                            <p class="section-desc">
+                                Inserisci i link delle classifiche di Fortnite Tracker da cui estrarre i talenti.
+                                Per ogni player trovato verrà estratto: PR EU, Earnings totali e media PR degli ultimi 10 tornei.
+                            </p>
+
+                            <div class="url-input-group">
+                                <input
+                                    type="text"
+                                    id="talent-url-input"
+                                    class="search-input"
+                                    placeholder="https://fortnitetracker.com/events/powerrankings?platform=pc&region=EU..."
+                                >
+                                <button id="add-url-btn" class="search-button">
+                                    <i class="fas fa-plus"></i> Aggiungi
+                                </button>
+                            </div>
+
+                            <div class="url-list" id="url-list">
+                                <div class="url-empty">Caricamento URL configurati...</div>
+                            </div>
+
+                            <div class="scraping-controls">
+                                <button id="run-scraping-btn" class="run-btn">
+                                    <i class="fas fa-play"></i> Avvia Scouting
+                                </button>
+                                <div class="scraping-status" id="scraping-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEZIONE 1.5: Lookup Singolo Player -->
+                    <div class="scouting-section animate-fade-in animate-delay-2">
+                        <div class="section-box">
+                            <h2><i class="fas fa-user-magnifying-glass"></i> Analisi Singolo Player</h2>
+                            <p class="section-desc">
+                                Inserisci il link del profilo Fortnite Tracker di un player per vederne le statistiche
+                                complete: PR EU, Earnings, ultimi 10 tornei e Talent Score calcolato nel contesto del pool attuale.
+                            </p>
+                            <div class="url-input-group">
+                                <input
+                                    type="text"
+                                    id="lookup-url-input"
+                                    class="search-input"
+                                    placeholder="https://fortnitetracker.com/profile/pc/NomeGiocatore"
+                                >
+                                <button id="lookup-btn" class="run-btn" style="white-space:nowrap;">
+                                    <i class="fas fa-search"></i> Analizza
+                                </button>
+                            </div>
+                            <div class="scraping-status" id="lookup-status"></div>
+                        </div>
+                    </div>
+
+                    <!-- SEZIONE 2: Classifica Talenti -->
+                    <div class="scouting-section animate-fade-in animate-delay-3">
+                        <div class="section-box">
+                            <div class="leaderboard-header">
+                                <h2><i class="fas fa-ranking-star"></i> Classifica Talenti</h2>
+                                <div class="leaderboard-info" id="leaderboard-info">
+                                    <span><i class="fas fa-clock"></i> Mai aggiornato</span>
+                                </div>
+                            </div>
+
+                            <div class="talent-leaderboard" id="talent-leaderboard">
+                                <div class="leaderboard-empty">
+                                    <i class="fas fa-search"></i>
+                                    <p>Nessun dato disponibile. Aggiungi gli URL delle classifiche e avvia lo scouting.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── TAB CLARVS TV ── -->
+                <div id="tab-tv" class="tab-content" style="display:none;">
+
+                    <!-- Sezione principale: lista streamer -->
+                    <div class="scouting-section animate-fade-in">
+                        <div class="section-box">
+                            <div class="roster-table-header">
+                                <h2><i class="fas fa-broadcast-tower"></i> Streamer Clarvs TV</h2>
+                                <button id="add-tv-streamer-btn" class="run-btn">
+                                    <i class="fas fa-plus"></i> Aggiungi Streamer
+                                </button>
+                            </div>
+                            <p class="section-desc">
+                                Le persone qui sotto appaiono nella sezione live della Clarvs TV.
+                                La TV controlla ogni 5 minuti se sono in diretta su Twitch o YouTube.
+                            </p>
+                            <div class="roster-table-wrapper">
+                                <table class="roster-admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th><i class="fab fa-twitch"></i> Twitch</th>
+                                            <th><i class="fab fa-youtube"></i> YouTube</th>
+                                            <th>Azioni</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tv-streamers-tbody">
+                                        <tr><td colspan="4" style="text-align:center;color:#888;padding:2rem">Caricamento...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nota credenziali API -->
+                    <div class="scouting-section animate-fade-in animate-delay-1">
+                        <div class="section-box" style="border-color:rgba(0,188,212,0.1);">
+                            <p style="margin:0;font-size:0.85rem;color:rgba(255,255,255,0.45);display:flex;align-items:center;gap:0.6rem;">
+                                <i class="fas fa-info-circle" style="color:rgba(0,188,212,0.5);"></i>
+                                Le credenziali Twitch e YouTube si configurano nel file <code style="color:#00bcd4;">.env</code> del progetto (variabili <code style="color:#00bcd4;">TWITCH_CLIENT_ID</code>, <code style="color:#00bcd4;">TWITCH_ACCESS_TOKEN</code>, <code style="color:#00bcd4;">YOUTUBE_API_KEY</code>).
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- fine tab TV -->
+
+                <!-- ── TAB HOME ── -->
+                <div id="tab-home" class="tab-content" style="display:none;">
+
+                    <!-- Ultime Notizie -->
+                    <div class="scouting-section animate-fade-in">
+                        <div class="section-box">
+                            <div class="roster-table-header">
+                                <h2><i class="fas fa-newspaper"></i> Ultime Notizie</h2>
+                                <button id="add-news-btn" class="run-btn">
+                                    <i class="fas fa-plus"></i> Aggiungi Notizia
+                                </button>
+                            </div>
+                            <div class="roster-table-wrapper">
+                                <table class="roster-admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Titolo</th>
+                                            <th>Data</th>
+                                            <th>Testo</th>
+                                            <th>Azioni</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="news-tbody">
+                                        <tr><td colspan="4" style="text-align:center;color:#888;padding:2rem">Caricamento...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prossimi Eventi -->
+                    <div class="scouting-section animate-fade-in animate-delay-1">
+                        <div class="section-box">
+                            <div class="roster-table-header">
+                                <h2><i class="fas fa-calendar-alt"></i> Prossimi Eventi</h2>
+                                <button id="add-event-btn" class="run-btn">
+                                    <i class="fas fa-plus"></i> Aggiungi Evento
+                                </button>
+                            </div>
+                            <div class="roster-table-wrapper">
+                                <table class="roster-admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Titolo</th>
+                                            <th>Data</th>
+                                            <th>Orario</th>
+                                            <th>Tipo</th>
+                                            <th>Azioni</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="events-tbody">
+                                        <tr><td colspan="5" style="text-align:center;color:#888;padding:2rem">Caricamento...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Links -->
+                    <div class="scouting-section animate-fade-in animate-delay-2">
+                        <div class="section-box">
+                            <h2><i class="fas fa-share-alt"></i> Link Social (Home)</h2>
+                            <p class="section-desc">Gestisci i post di Instagram e X mostrati nella home. Ogni riga è un link embed.</p>
+
+                            <div class="form-section-title"><i class="fab fa-instagram"></i> Instagram</div>
+                            <div id="instagram-links-list"></div>
+                            <button id="add-instagram-btn" class="run-btn" style="margin-top:0.75rem;font-size:0.85rem;padding:0.5rem 1rem;">
+                                <i class="fas fa-plus"></i> Aggiungi Link Instagram
+                            </button>
+
+                            <div class="form-section-title" style="margin-top:2rem;"><i class="fab fa-twitter"></i> X (Twitter)</div>
+                            <div id="twitter-links-list"></div>
+                            <button id="add-twitter-btn" class="run-btn" style="margin-top:0.75rem;font-size:0.85rem;padding:0.5rem 1rem;">
+                                <i class="fas fa-plus"></i> Aggiungi Link X
+                            </button>
+
+                            <div style="margin-top:1.5rem;display:flex;justify-content:flex-end;">
+                                <button id="save-social-btn" class="run-btn">
+                                    <i class="fas fa-save"></i> Salva Social
+                                </button>
+                                <div id="social-save-status" style="margin-left:1rem;display:flex;align-items:center;font-size:0.9rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- fine tab Home -->
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Dettagli Talent -->
+    <div id="player-modal" class="player-modal" style="display: none;">
+        <div class="player-modal-content">
+            <div class="player-modal-header">
+                <h2 id="modal-player-name">Dettagli Talento</h2>
+                <span class="player-modal-close">&times;</span>
+            </div>
+            <div class="player-modal-body" id="modal-player-content"></div>
+        </div>
+    </div>
+
+    <!-- Modal Form Roster -->
+    <div id="roster-modal" class="player-modal" style="display: none;">
+        <div class="player-modal-content roster-form-modal">
+            <div class="player-modal-header">
+                <h2 id="roster-modal-title">Aggiungi Player</h2>
+                <span id="roster-modal-close" class="player-modal-close">&times;</span>
+            </div>
+            <div class="player-modal-body">
+                <form id="roster-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nome *</label>
+                            <input type="text" id="f-name" required placeholder="es. Gabbs">
+                        </div>
+                        <div class="form-group">
+                            <label>Categoria *</label>
+                            <select id="f-category" required>
+                                <option value="proPlayer">Pro Player</option>
+                                <option value="talent">Talent</option>
+                                <option value="academy">Academy</option>
+                                <option value="contentCreator">Content Creator</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ruolo *</label>
+                            <input type="text" id="f-role" required placeholder="es. Pro Player">
+                        </div>
+                        <div class="form-group">
+                            <label>Gioco *</label>
+                            <input type="text" id="f-game" required placeholder="es. Fortnite">
+                        </div>
+                        <div class="form-group form-full">
+                            <label>URL Immagine</label>
+                            <input type="text" id="f-imageUrl" placeholder="/assets/Images/players/nome.jpg o URL esterno">
+                        </div>
+                    </div>
+
+                    <div class="form-section-title"><i class="fas fa-trophy"></i> Fortnite Tracker</div>
+                    <div class="form-grid">
+                        <div class="form-group form-full">
+                            <label>URL Fortnite Tracker</label>
+                            <input type="text" id="f-ftTrackerUrl" placeholder="https://fortnitetracker.com/profile/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Username FT</label>
+                            <input type="text" id="f-ftTrackerUsername" placeholder="es. CLS GABBSAO">
+                        </div>
+                        <div class="form-group">
+                            <label>Piattaforma FT</label>
+                            <input type="text" id="f-ftPlatform" placeholder="es. all, kbm, gamepad">
+                        </div>
+                        <div class="form-group">
+                            <label>Regione FT</label>
+                            <input type="text" id="f-ftRegion" placeholder="es. EU, NAE">
+                        </div>
+                    </div>
+
+                    <div class="form-section-title"><i class="fas fa-share-alt"></i> Social</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fab fa-twitter"></i> Twitter</label>
+                            <input type="text" id="f-twitter" placeholder="https://x.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fab fa-instagram"></i> Instagram</label>
+                            <input type="text" id="f-instagram" placeholder="https://instagram.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fab fa-twitch"></i> Twitch</label>
+                            <input type="text" id="f-twitch" placeholder="https://twitch.tv/...">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fab fa-youtube"></i> YouTube</label>
+                            <input type="text" id="f-youtube" placeholder="https://youtube.com/@...">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fab fa-tiktok"></i> TikTok</label>
+                            <input type="text" id="f-tiktok" placeholder="https://tiktok.com/@...">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="form-cancel-btn" class="access-btn secondary">Annulla</button>
+                        <button type="submit" class="run-btn"><i class="fas fa-save"></i> Salva</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Conferma Eliminazione -->
+    <div id="delete-confirm-modal" class="player-modal" style="display: none;">
+        <div class="player-modal-content delete-confirm-content">
+            <div class="delete-confirm-icon">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <h3 class="delete-confirm-title">Elimina Player</h3>
+            <p class="delete-confirm-message">Sei sicuro di voler eliminare <strong id="delete-player-name"></strong> dal roster?</p>
+            <p class="delete-confirm-sub">Questa azione non può essere annullata.</p>
+            <div class="delete-confirm-actions">
+                <button id="delete-cancel-btn" class="access-btn secondary">
+                    <i class="fas fa-times"></i> Annulla
+                </button>
+                <button id="delete-confirm-btn" class="delete-danger-btn">
+                    <i class="fas fa-trash"></i> Elimina
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Aggiungi/Modifica Streamer TV -->
+    <div id="tv-streamer-modal" class="player-modal" style="display:none;">
+        <div class="player-modal-content roster-form-modal">
+            <div class="player-modal-header">
+                <h2 id="tv-streamer-modal-title">Aggiungi Streamer</h2>
+                <span id="tv-streamer-modal-close" class="player-modal-close">&times;</span>
+            </div>
+            <div class="player-modal-body">
+                <form id="tv-streamer-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nome *</label>
+                            <input type="text" id="tvs-name" required placeholder="es. BettaTV">
+                        </div>
+                        <div class="form-group">
+                            <label>URL Immagine</label>
+                            <input type="text" id="tvs-avatar" placeholder="../assets/Images/players/bettatv.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fab fa-twitch" style="color:#9147ff"></i> Username Twitch</label>
+                            <input type="text" id="tvs-twitch" placeholder="es. bettatv  (solo username, senza link)">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fab fa-youtube" style="color:#ff4444"></i> Link YouTube</label>
+                            <input type="text" id="tvs-youtube" placeholder="https://youtube.com/@handle">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="tvs-cancel-btn" class="access-btn secondary">Annulla</button>
+                        <button type="submit" class="run-btn"><i class="fas fa-save"></i> Salva</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Aggiungi/Modifica Notizia -->
+    <div id="news-modal" class="player-modal" style="display:none;">
+        <div class="player-modal-content roster-form-modal">
+            <div class="player-modal-header">
+                <h2 id="news-modal-title">Aggiungi Notizia</h2>
+                <span id="news-modal-close" class="player-modal-close">&times;</span>
+            </div>
+            <div class="player-modal-body">
+                <form id="news-form">
+                    <div class="form-grid">
+                        <div class="form-group form-full">
+                            <label>Titolo *</label>
+                            <input type="text" id="fn-title" required placeholder="es. Nuovo torneo in arrivo">
+                        </div>
+                        <div class="form-group">
+                            <label>Data *</label>
+                            <input type="text" id="fn-date" required placeholder="es. 18 Ottobre 2025">
+                        </div>
+                        <div class="form-group">
+                            <label>Immagine (URL)</label>
+                            <input type="text" id="fn-image" placeholder="../assets/Images/news/nome.jpg">
+                        </div>
+                        <div class="form-group form-full">
+                            <label>Testo *</label>
+                            <textarea id="fn-content" required placeholder="Testo della notizia..." style="min-height:100px;width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(0,188,212,0.2);border-radius:8px;padding:0.75rem;color:#fff;font-size:0.9rem;resize:vertical;"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="news-cancel-btn" class="access-btn secondary">Annulla</button>
+                        <button type="submit" class="run-btn"><i class="fas fa-save"></i> Salva</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Aggiungi/Modifica Evento -->
+    <div id="event-modal" class="player-modal" style="display:none;">
+        <div class="player-modal-content roster-form-modal">
+            <div class="player-modal-header">
+                <h2 id="event-modal-title">Aggiungi Evento</h2>
+                <span id="event-modal-close" class="player-modal-close">&times;</span>
+            </div>
+            <div class="player-modal-body">
+                <form id="event-form">
+                    <div class="form-grid">
+                        <div class="form-group form-full">
+                            <label>Titolo *</label>
+                            <input type="text" id="fe-title" required placeholder="es. Solo Late Game">
+                        </div>
+                        <div class="form-group">
+                            <label>Data *</label>
+                            <input type="text" id="fe-date" required placeholder="es. 25 Ottobre 2025">
+                        </div>
+                        <div class="form-group">
+                            <label>Orario *</label>
+                            <input type="text" id="fe-time" required placeholder="es. 16:00">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo *</label>
+                            <input type="text" id="fe-type" required placeholder="es. Torneo">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="event-cancel-btn" class="access-btn secondary">Annulla</button>
+                        <button type="submit" class="run-btn"><i class="fas fa-save"></i> Salva</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer staff-only" style="display: none;">
+        <div class="social-links">
+            <a href="https://www.instagram.com/clarvs.gg/" target="_blank"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.youtube.com/@clarvs" target="_blank"><i class="fab fa-youtube"></i></a>
+            <a href="https://x.com/ClarvsTeam" target="_blank"><i class="fab fa-twitter"></i></a>
+        </div>
+        <p>&copy; 2019 Clarvs Esport. Tutti i diritti riservati.</p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/admin.js"></script>
+    <script src="../js/interactions.js"></script>
+</body>
+</html>

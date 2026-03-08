@@ -1,162 +1,254 @@
-// Variabili globali
+// Variabili globali slider
 let currentSlide = 0;
-const slideWidth = 300; // 280px card + 2rem (32px) gap
+const slideWidth = 300; // 280px card + 20px gap
 let maxSlides = 0;
 let autoSlideInterval;
 
-// --- Inizializzazione e Gestione Eventi Principali ---
+// --- Inizializzazione ---
 document.addEventListener('DOMContentLoaded', function() {
-    initParticles();
-    initRosterSlider();
-    startAutoSlide();
+    loadRosterCards().then(() => {
+        initRosterSlider();
+        startAutoSlide();
+    });
+    loadTicker();
     loadNews();
     loadEvents();
-    addTournamentToMenu(); // Aggiungi link torneo al menu
+    if (typeof addTournamentToMenu === 'function') addTournamentToMenu();
 
-    // Gestore per chiudere menu e modali
     document.addEventListener('click', function(e) {
-        // Chiude il dropdown se si clicca fuori
         if (!e.target.closest('.user-menu')) {
             document.getElementById('userDropdown')?.classList.remove('active');
         }
-
-        /*
-        // La gestione della modale non è più necessaria qui,
-        // dato che le funzioni di apertura sono solo dei placeholder.
-        if (e.target.classList.contains('modal-overlay')) {
-            closeModal();
-        }
-        */
     });
-
-    /*
-    // La gestione del form di login è stata commentata perché la modale
-    // non viene più aperta. Verrà ripristinata con l'implementazione del login.
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Login simulato con successo!');
-            closeModal();
-        });
-    }
-    */
 });
 
-// --- Funzioni per Login e Dropdown ---
+// --- Roster dinamico da API ---
+
+async function loadRosterCards() {
+    const container = document.getElementById('rosterContainer');
+    if (!container) return;
+
+    const socialIcons = {
+        twitter:   'fab fa-twitter',
+        instagram: 'fab fa-instagram',
+        twitch:    'fab fa-twitch',
+        youtube:   'fab fa-youtube',
+        tiktok:    'fab fa-tiktok'
+    };
+
+    const categoryLabel = {
+        proPlayer:      'PRO PLAYER',
+        talent:         'TALENT',
+        academy:        'ACADEMY',
+        contentCreator: 'CONTENT CREATOR'
+    };
+
+    function formatPR(value) {
+        if (!value) return null;
+        return value.toLocaleString('it-IT');
+    }
+
+    function formatEarnings(value) {
+        if (!value) return null;
+        return '$' + value.toLocaleString('it-IT');
+    }
+
+    try {
+        let roster = null;
+        let statsMap = {};
+
+        const [rRes, sRes] = await Promise.all([
+            fetch('/scraper/config/roster.json'),
+            fetch('/scraper/data/player-stats.json')
+        ]);
+        if (rRes.ok) roster = await rRes.json();
+        if (sRes.ok) {
+            const statsData = await sRes.json();
+            (statsData.players || []).forEach(p => {
+                statsMap[p.name.toLowerCase()] = p.stats;
+            });
+        }
+
+        if (!roster || roster.length === 0) return;
+
+        container.innerHTML = roster.map(player => {
+            const initials = player.name
+                .split(' ')
+                .map(w => w[0] || '')
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
+
+            const socials = Object.entries(player.socials || {})
+                .filter(([, url]) => url)
+                .map(([p, url]) => `<a href="${url}" target="_blank"><i class="${socialIcons[p] || 'fas fa-link'}"></i></a>`)
+                .join('');
+
+            const avatar = player.imageUrl
+                ? `<div class="player-avatar" style="background-image:url('${player.imageUrl}')"></div>`
+                : `<div class="player-initial">${initials}</div>`;
+
+            const stats = statsMap[player.name.toLowerCase()];
+            const pr = stats?.pr ? formatPR(stats.pr) : null;
+            const earnings = stats?.earnings ? formatEarnings(stats.earnings) : null;
+
+            const statsHtml = (pr || earnings) ? `
+                <div class="home-stat-chips">
+                    ${pr ? `<span class="home-stat-chip"><span class="chip-val">${pr}</span><span class="chip-lbl">PR EU</span></span>` : ''}
+                    ${earnings ? `<span class="home-stat-chip chip-earn"><span class="chip-val">${earnings}</span></span>` : ''}
+                </div>` : '';
+
+            return `
+                <div class="roster-card">
+                    <div class="card-content">
+                        ${avatar}
+                        <h3>${player.name}</h3>
+                        <p class="player-role">${categoryLabel[player.category] || player.role.toUpperCase()}</p>
+                        ${statsHtml}
+                        <div class="social-icons">${socials}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        console.error('Errore caricamento roster slider:', e);
+    }
+}
+
+let _tickerRafId = null;
+
+async function loadTicker() {
+    const track = document.getElementById('ticker-track');
+    if (!track) return;
+
+    try {
+        let statsData  = null;
+        let rosterData = null;
+
+        const [sr, rr] = await Promise.all([
+            fetch('/scraper/data/player-stats.json'),
+            fetch('/scraper/config/roster.json')
+        ]);
+        if (sr.ok) statsData  = await sr.json();
+        if (rr.ok) rosterData = await rr.json();
+
+        if (!statsData || !statsData.players || statsData.players.length === 0) {
+            hideTicker();
+            return;
+        }
+
+        const trackerUrls = {};
+        (rosterData || []).forEach(p => {
+            if (p.ftTrackerUrl) trackerUrls[p.name] = p.ftTrackerUrl;
+        });
+
+        const items = [];
+        statsData.players.forEach(player => {
+            (player.stats?.tournaments || []).forEach(t => {
+                items.push({
+                    playerName:     player.name,
+                    tournamentName: t.name || 'Tournament',
+                    placement:      t.placement
+                });
+            });
+        });
+
+        if (items.length === 0) {
+            hideTicker();
+            return;
+        }
+
+        const html = items.map(item => `
+            <div class="ticker-item">
+                <span class="ticker-player">${item.playerName}</span>
+                <span class="ticker-separator">|</span>
+                <span class="ticker-tournament">${item.tournamentName}</span>
+                <span class="ticker-arrow">&#8594;</span>
+                <span class="ticker-placement">#${item.placement}</span>
+            </div>
+        `).join('');
+
+        // Popola con una copia sola, misura, poi duplica
+        track.innerHTML = html;
+        track.style.transform = '';
+
+        // Aspetta 2 frame affinché il browser calcoli scrollWidth
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+        const singleWidth = track.scrollWidth;
+        if (singleWidth === 0) { hideTicker(); return; }
+
+        // Duplica per loop seamless
+        track.innerHTML = html + html;
+
+        // Ferma eventuale animazione precedente
+        if (_tickerRafId) { cancelAnimationFrame(_tickerRafId); _tickerRafId = null; }
+
+        // Scorrimento JS: 80 px/sec, costante indipendente dal framerate
+        const SPEED = 80;
+        let pos  = 0;
+        let last = null;
+
+        function tick(ts) {
+            if (last !== null) {
+                pos += SPEED * (ts - last) / 1000;
+                if (pos >= singleWidth) pos -= singleWidth;
+                track.style.transform = `translateX(-${pos}px)`;
+            }
+            last = ts;
+            _tickerRafId = requestAnimationFrame(tick);
+        }
+
+        _tickerRafId = requestAnimationFrame(tick);
+
+    } catch (e) {
+        console.error('Errore caricamento ticker:', e);
+        hideTicker();
+    }
+}
+
+function hideTicker() {
+    const section = document.querySelector('.results-ticker');
+    if (section) section.style.display = 'none';
+}
+
+// --- Funzioni dropdown ---
 function toggleDropdown() {
     document.getElementById('userDropdown')?.classList.toggle('active');
 }
 
-// Le funzioni per Login, Registrazione e Admin sono state aggiornate
-// per mostrare un messaggio che indica che sono da implementare.
+function openLogin()    { alert('Funzione Login - Da implementare'); }
+function openRegister() { alert('Funzione Registrazione - Da implementare'); }
+function openAdmin()    { alert('Funzione Admin Panel - Da implementare'); }
 
-/**
- * Funzione per il Login dell'utente.
- * @description Attualmente mostra un avviso. Da implementare la logica di login.
- */
-function openLogin() {
-    alert('Funzione Login - Da implementare');
-}
+// --- Slider e Particelle ---
 
-/**
- * Funzione per la Registrazione di un nuovo utente.
- * @description Attualmente mostra un avviso. Da implementare la logica di registrazione.
- */
-function openRegister() {
-    alert('Funzione Registrazione - Da implementare');
-}
-
-/**
- * Funzione per l'accesso al pannello di amministrazione.
- * @description Attualmente mostra un avviso. Da implementare la logica per il pannello admin.
- */
-function openAdmin() {
-    alert('Funzione Admin Panel - Da implementare');
-}
-
-/*
-// Funzione per chiudere la modale (non più utilizzata al momento)
-function closeModal() {
-    document.getElementById('loginModal').classList.remove('active');
-    document.getElementById('registerModal').classList.remove('active');
-}
-*/
-
-
-// --- Funzioni Slider e Particelle (INVARIATE) ---
-
-// Effetto particelle 3D
-function initParticles() {
-    const canvas = document.getElementById('particles-canvas');
-    if (!canvas) return;
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
-    renderer.setClearColor(0x000000, 0);
-
-    const particleGeometry = new THREE.BufferGeometry();
-    const particleCount = 500;
-    const posArray = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 10;
-    }
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-
-    const particleMaterial = new THREE.PointsMaterial({
-        size: 0.02,
-        color: 0x00BFFF
-    });
-    const particleMesh = new THREE.Points(particleGeometry, particleMaterial);
-    scene.add(particleMesh);
-    camera.position.z = 5;
-
-    function animate() {
-        requestAnimationFrame(animate);
-        particleMesh.rotation.y += 0.001;
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-}
-
-// Roster slider
 function initRosterSlider() {
     const container = document.getElementById('rosterContainer');
-    if(!container) return;
-    const cards = container.children;
+    if (!container) return;
+    const cards        = container.children;
     const containerWidth = container.offsetWidth;
-    const totalWidth = cards.length * (280 + 32); // card width + gap
-    maxSlides = Math.max(0, Math.ceil((totalWidth - containerWidth) / slideWidth));
+    const totalWidth   = cards.length * (280 + 32);
+    maxSlides          = Math.max(0, Math.ceil((totalWidth - containerWidth) / slideWidth));
 }
 
 function nextSlide() {
     const container = document.getElementById('rosterContainer');
-    if (currentSlide < maxSlides) {
-        currentSlide++;
-    } else {
-        currentSlide = 0;
-    }
+    if (!container) return;
+    currentSlide = currentSlide < maxSlides ? currentSlide + 1 : 0;
     container.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
 }
 
 function previousSlide() {
     const container = document.getElementById('rosterContainer');
-    if (currentSlide > 0) {
-        currentSlide--;
-    } else {
-        currentSlide = maxSlides;
-    }
+    if (!container) return;
+    currentSlide = currentSlide > 0 ? currentSlide - 1 : maxSlides;
     container.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
 }
 
 function startAutoSlide() {
-    stopAutoSlide(); // Evita intervalli multipli
+    stopAutoSlide();
     autoSlideInterval = setInterval(nextSlide, 4000);
 }
 
@@ -170,40 +262,37 @@ window.addEventListener('resize', initRosterSlider);
 
 // Smooth scrolling
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
+    anchor.addEventListener('click', function(e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 });
 
-// --- Caricamento Notizie ---
-function loadNews() {
+// --- Cache home content ---
+let _homeContent = null;
+async function getHomeContent() {
+    if (!_homeContent) {
+        try {
+            const res = await fetch('/scraper/config/home-content.json');
+            if (res.ok) _homeContent = await res.json();
+        } catch (e) { /* ignora */ }
+    }
+    return _homeContent || { news: [], events: [], social: { instagram: [], twitter: [] } };
+}
+
+// --- Notizie ---
+async function loadNews() {
     const newsGrid = document.getElementById('news-grid');
     if (!newsGrid) return;
 
-    const newsData = [
-        {
-            title: "Nuovo Sito dei Clarvs",
-            date: "18 Ottobre 2025",
-            content: "È online il nuovo sito web dei Clarvs! Design moderno, funzionalità migliorate e tutta l'esperienza del team.",
-            image: "../assets/Images/news/new-site.jpg"
-        },
-        {
-            title: "Arrivato il Capitolo 5 del Team",
-            date: "18 Ottobre 2025", 
-            content: "Da oggi inizia il quinto capitolo era 2 dei clarvs",
-            image: "../assets/Images/news/chapter-5.jpg"
-        },
-        {
-            title: "La CCC è Tornata!",
-            date: "18 Ottobre 2025",
-            content: "La quarta edizione della ccc torna con in palio 300 euro",
-            image: "../assets/Images/news/ccc-tournament.jpg"
-        }
-    ];
+    const content  = await getHomeContent();
+    const newsData = content.news || [];
+
+    if (newsData.length === 0) {
+        newsGrid.innerHTML = '<p style="text-align:center;color:#888">Nessuna notizia disponibile.</p>';
+        return;
+    }
 
     newsGrid.innerHTML = newsData.map(news => `
         <article class="news-card">
@@ -217,48 +306,26 @@ function loadNews() {
     `).join('');
 }
 
-// --- Caricamento Eventi ---
-function loadEvents() {
+// --- Eventi ---
+async function loadEvents() {
     const eventsList = document.getElementById('events-list');
     if (!eventsList) return;
 
-    const eventsData = [
-        {
-            title: "Solo Late Game",
-            date: "25 Ottobre 2025",
-            time: "16:00",
-            description: "",
-            type: "Torneo"
-        },
-        {
-            title: "Duo Late Game",
-            date: "1 Novembre 2025", 
-            time: "16:00",
-            description: "",
-            type: "Torneo"
-        },
-        {
-            title: "Solo Late Game",
-            date: "8 Novembre 2025",
-            time: "16:00", 
-            description: "",
-            type: "Torneo"
-        }
-    ];
+    const content    = await getHomeContent();
+    const eventsData = content.events || [];
+
+    if (eventsData.length === 0) {
+        eventsList.innerHTML = '<p style="text-align:center;color:#888">Nessun evento in programma.</p>';
+        return;
+    }
 
     eventsList.innerHTML = eventsData.map(event => `
         <div class="event-card">
             <div class="event-type">${event.type}</div>
             <h3 class="event-title">${event.title}</h3>
             <div class="event-details">
-                <div class="event-date">
-                    <i class="fas fa-calendar"></i>
-                    ${event.date}
-                </div>
-                <div class="event-time">
-                    <i class="fas fa-clock"></i>
-                    ${event.time}
-                </div>
+                <div class="event-date"><i class="fas fa-calendar"></i> ${event.date}</div>
+                <div class="event-time"><i class="fas fa-clock"></i> ${event.time}</div>
             </div>
         </div>
     `).join('');

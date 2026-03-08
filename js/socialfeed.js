@@ -99,42 +99,52 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Funzione per caricare i post Instagram
     async function loadInstagramPosts() {
-        socialPosts.innerHTML = `
+        let permalinks = [
+            'https://www.instagram.com/p/DR7kAgcCGDi/',
+            'https://www.instagram.com/p/DR7j85QCBSn/',
+            'https://www.instagram.com/p/DR5DFHtCFjX/'
+        ];
+        try {
+            const res = await fetch('/scraper/config/home-content.json');
+            if (res.ok) {
+                const content = await res.json();
+                const insta = content?.social?.instagram;
+                if (insta && insta.length > 0) permalinks = insta.map(i => i.permalink);
+            }
+        } catch (e) { /* usa default */ }
+
+        socialPosts.innerHTML = permalinks.map(p => `
             <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DR7kAgcCGDi/">
+                <blockquote class="instagram-media" data-instgrm-permalink="${p}">
                 </blockquote>
             </div>
-            <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DR7j85QCBSn/">
-                </blockquote>
-            </div>
-            <div class="instagram-embed">
-                <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DR5DFHtCFjX/">
-                </blockquote>
-            </div>
-        `;
+        `).join('');
         await reloadScripts('instagram');
     }
 
     // Funzione per caricare i post di X
     async function loadTwitterPosts() {
-        socialPosts.innerHTML = `
+        let tweets = [
+            { link: 'https://twitter.com/Pantefn7/status/1978560891252527237?ref_src=twsrc%5Etfw', date: 'December 17, 2024' },
+            { link: 'https://twitter.com/Pantefn7/status/1977046923585470486?ref_src=twsrc%5Etfw', date: 'December 16, 2024' },
+            { link: 'https://twitter.com/Pantefn7/status/1969435357469876732?ref_src=twsrc%5Etfw', date: 'December 15, 2024' }
+        ];
+        try {
+            const res = await fetch('/scraper/config/home-content.json');
+            if (res.ok) {
+                const content = await res.json();
+                const tw = content?.social?.twitter;
+                if (tw && tw.length > 0) tweets = tw;
+            }
+        } catch (e) { /* usa default */ }
+
+        socialPosts.innerHTML = tweets.map(t => `
             <div class="twitter-embed" style="margin-bottom: 20px;">
                 <blockquote class="twitter-tweet" data-theme="dark" data-link-color="#00ffff" data-dnt="true">
-                    <a href="https://twitter.com/Pantefn7/status/1978560891252527237?ref_src=twsrc%5Etfw">December 17, 2024</a>
+                    <a href="${t.link}">${t.date}</a>
                 </blockquote>
             </div>
-            <div class="twitter-embed" style="margin-bottom: 20px;">
-                <blockquote class="twitter-tweet" data-theme="dark" data-link-color="#00ffff" data-dnt="true">
-                    <a href="https://twitter.com/Pantefn7/status/1977046923585470486?ref_src=twsrc%5Etfw">December 16, 2024</a>
-                </blockquote>
-            </div>
-            <div class="twitter-embed" style="margin-bottom: 20px;">
-                <blockquote class="twitter-tweet" data-theme="dark" data-link-color="#00ffff" data-dnt="true">
-                    <a href="https://twitter.com/Pantefn7/status/1969435357469876732?ref_src=twsrc%5Etfw">December 15, 2024</a>
-                </blockquote>
-            </div>
-        `;
+        `).join('');
         
         // Rimuovi script esistente
         const oldScript = document.querySelector('script[src*="platform.twitter.com/widgets.js"]');

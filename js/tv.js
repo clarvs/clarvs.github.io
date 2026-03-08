@@ -1,672 +1,664 @@
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('[Clarvs TV] 🚀 Avvio sistema TV...');
-    
-    // Verifica elementi DOM
-    const tvScreen = document.getElementById('tv-screen');
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    const streamStatus = document.getElementById('stream-status');
-    const scheduleList = document.getElementById('schedule-list');
-    
-    if (!tvScreen) {
-        console.error('[Clarvs TV] ❌ ERRORE: Elemento tv-screen non trovato!');
-        return;
-    }
-    
-    console.log('[Clarvs TV] ✅ Elementi DOM trovati');
-    console.log('[Clarvs TV] 📱 User Agent:', navigator.userAgent);
-    console.log('[Clarvs TV] 🌐 URL:', window.location.href);
-    
-    // Verifica disponibilità StreamAPI
-    if (typeof StreamAPI === 'undefined') {
-        console.warn('[Clarvs TV] ⚠️ StreamAPI non disponibile, modalità solo playlist');
-    } else {
-        console.log('[Clarvs TV] ✅ StreamAPI disponibile');
-    }
-    
-    // Inizializza API Manager (se disponibile)
-    let streamAPI = null;
-    if (typeof StreamAPI !== 'undefined') {
-        streamAPI = new StreamAPI();
-    }
-    
-    let currentMode = 'playlist'; // 'playlist' o 'live'
-    let liveCheckInterval;
-    
-    // --- CONFIGURAZIONE CANALI LIVE ---
-    const LIVE_CHANNELS = {
-        clarvs: {
-            name: 'Clarvs',
-            platform: 'youtube',
-            channelId: 'UCxxxxxxxxxxxx', // Sarà estratto dinamicamente
-            channelUrl: 'https://www.youtube.com/@clarvs',
-            checkUrl: 'https://www.youtube.com/@clarvs/live'
-        },
-        bettatv: {
-            name: 'BettaTV',
-            platform: 'twitch',
-            channelName: 'bettatv',
-            channelUrl: 'https://www.twitch.tv/bettatv'
+/**
+ * Clarvs TV
+ *
+ * Struttura pagina:
+ *  - Player principale: mostra in automatico il video YouTube più recente tra tutti i canali.
+ *    Se qualcuno è live (Twitch o YouTube) switcha automaticamente alla diretta.
+ *  - "I Nostri Canali": card compatte per ogni streamer con indicatore live.
+ *  - "Video YouTube": griglia di tutti i video recenti dai canali YouTube.
+ *
+ * Config: js/tv-config.js  →  window.TV_CONFIG = { twitch: {...}, youtube: {...} }
+ * Streamers: Roster (automatico, da /api/roster) + lista manuale (localStorage clarvsTV_streamers)
+ */
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+
+function parseTwitchUser(val) {
+    if (!val) return null;
+    const m = val.match(/twitch\.tv\/([^/?#\s]+)/i);
+    return ((m ? m[1] : val).toLowerCase().trim()) || null;
+}
+
+function parseYtHandle(val) {
+    if (!val) return null;
+    const m = val.match(/youtube\.com\/((?:@|channel\/|c\/)[^/?#\s]+)/i);
+    return m ? m[1] : null;
+}
+
+function escHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function fmtViewers(n) {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+    if (n >= 1_000)     return (n / 1_000).toFixed(1)     + 'K';
+    return String(n);
+}
+
+function trunc(str, len) {
+    return str && str.length > len ? str.slice(0, len) + '…' : (str || '');
+}
+
+function relativeDate(isoStr) {
+    if (!isoStr) return '';
+    const diff  = Date.now() - new Date(isoStr).getTime();
+    const mins  = Math.floor(diff / 60_000);
+    const hours = Math.floor(diff / 3_600_000);
+    const days  = Math.floor(diff / 86_400_000);
+    if (days  > 30)  return new Date(isoStr).toLocaleDateString('it-IT');
+    if (days  >  0)  return `${days} ${days  === 1 ? 'giorno' : 'giorni'} fa`;
+    if (hours >  0)  return `${hours} ${hours === 1 ? 'ora'    : 'ore'}   fa`;
+    if (mins  >  0)  return `${mins}  min fa`;
+    return 'Adesso';
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', async function () {
+    console.log('[Clarvs TV] Avvio...');
+
+    // ── DOM ──────────────────────────────────────────────────────────────────
+    const tvScreen           = document.getElementById('tv-screen');
+    const streamStatus       = document.getElementById('stream-status');
+    const fullscreenBtn      = document.getElementById('fullscreen-btn');
+    const backBtn            = document.getElementById('back-to-playlist-btn');
+    const nowPlayingBar      = document.getElementById('tv-now-playing');
+    const nowPlayingName     = document.getElementById('now-playing-name');
+    const nowPlayingPlatform = document.getElementById('now-playing-platform');
+    const channelsGrid       = document.getElementById('channels-grid');
+    const videosGrid         = document.getElementById('videos-grid');
+    const videosSection      = document.getElementById('videos-section');
+    const liveCountBadge     = document.getElementById('live-count-badge');
+    const lastCheckEl        = document.getElementById('last-check-time');
+    const refreshLiveBtn     = document.getElementById('refresh-live-btn');
+    const noApiWarning       = document.getElementById('no-api-warning');
+
+    if (!tvScreen) { console.error('[Clarvs TV] #tv-screen non trovato'); return; }
+
+    // ── Stato ─────────────────────────────────────────────────────────────────
+    let streamers     = [];
+    let tvConfig      = {};
+    let liveData      = {};       // { id: { isLive, platform, title, gameName, viewerCount, thumbnailUrl, lastVideos } }
+    let allVideos     = [];       // tutti i video YT ordinati per data (più recente prima)
+    let currentMode   = 'idle';   // 'idle' | 'video' | 'live' | 'manual'
+    let activeId      = null;
+    let currentFilter = 'all';
+    let liveTimer     = null;
+
+    // ── Config ────────────────────────────────────────────────────────────────
+    async function loadConfig() {
+        // Aspetta che tv-config.js abbia caricato le chiavi dal server
+        if (window.TV_CONFIG_PROMISE) {
+            try { await window.TV_CONFIG_PROMISE; } catch {}
         }
-    };
-
-    // --- CONFIGURAZIONE TV SINCRONIZZATA ---
-    // Array degli ID video della playlist YouTube
-    const playlistVideos = [
-        'Tl5Z8aqEcMU', '-9csAIF5OEU', 'QBr_0RzUJ3E', 'rQDnrlmv54E', 'rbSrgQtWUek', 
-        '79N8-KZ6FxM', 'L47q-WED63A', '91HNIfrBLRc', 'qwNO1pTEag0', 'yhujiXRAWM4', 
-        'amZ4DqF-2f4', 'gnqqraV_sJ8', '7UIelBCPgiM', 'SQKzsx2QGTI', 'nP5rqzJbP1s', 
-        'CicIEmh0uhY', 'rh88yZ9Gj-4', 'EKTjq6anV4M', 'ucdZtsdl7Bo', '0VZrU9WkIl0', 
-        'L18VUJ7_b-E', 'Fi7ciPu_bAY', 'KoYTH4c-IY8', 'A_bIHfNCR54', '7x-2_1x66Z4', 
-        'Zkn4MYkLdtw', 'qSBAeBtsJgo', 'UvZk5y5ai78', 'E1CVz6Zku7c', 'WvmTqk5LufY', 
-        'K-W3-smxo4g', 'gETwja_8ZO8', 'xefdWCxCvZM'
-    ];
-    
-    // Durate in secondi di ciascun video (nell'ordine della playlist)
-    const durations = [
-        20862, 11317, 1678, 4818, 5813, 10246, 11777, 9574, 9257, 8248, 9086, 856, 
-        910, 949, 1099, 508, 644, 803, 1329, 1550, 567, 1465, 2039, 2599, 3331, 
-        915, 1463, 1294, 212, 137, 290, 159, 1709
-    ];
-    
-    // Orario di partenza della playlist (00:00:00 UTC)
-    const playlistStartHour = 0;
-    const playlistStartMinute = 0;
-    const playlistStartSecond = 0;
-
-    // --- FUNZIONI PRINCIPALI ---
-    
-    /**
-     * Inizializza la TV con controllo automatico live/playlist
-     */
-    async function initializeTV() {
-        console.log('[Clarvs TV] Inizializzazione...');
-        
-        // Inizializza sempre con la playlist
-        console.log('[Clarvs TV] Avvio playlist predefinita...');
-        switchToPlaylist();
-        
-        // Controlla subito se ci sono stream live (con delay per permettere il caricamento)
-        setTimeout(() => {
-            checkAndSwitchMode();
-        }, 3000);
-        
-        // Imposta controllo periodico ogni 90 secondi
-        liveCheckInterval = setInterval(checkAndSwitchMode, 90000);
-        
-        // Inizializza controlli
-        initializeControls();
-        
-        console.log('[Clarvs TV] Inizializzazione completata con controllo live automatico');
+        if (window.TV_CONFIG) {
+            tvConfig = window.TV_CONFIG;
+            const tw = !!(tvConfig.twitch && tvConfig.twitch.clientId && tvConfig.twitch.accessToken);
+            const yt = !!(tvConfig.youtube && tvConfig.youtube.apiKey);
+            console.log("[TV Config] Twitch:" + (tw ? "OK" : "mancante") + " | YouTube:" + (yt ? "OK" : "mancante"));
+        } else {
+            tvConfig = {};
+            console.warn("[TV Config] Chiavi non disponibili - server offline o .env non configurato");
+        }
     }
-    
-    /**
-     * Controlla se ci sono stream live attivi (senza API)
-     */
-    async function checkLiveStreams() {
-        console.log('[Live Check] Controllo stream live...');
-        const liveStreams = [];
 
+    // ── Streamers (Roster + manuale) ──────────────────────────────────────────
+    async function loadStreamers() {
+        const result = [];
+        const seen   = new Set();
+
+        // 1. Roster automatico
         try {
-            // Controlla YouTube Clarvs
-            const youtubeStatus = await checkYouTubeLive();
-            if (youtubeStatus.isLive) {
-                liveStreams.push({
-                    channel: 'clarvs',
-                    platform: 'youtube',
-                    title: youtubeStatus.title || 'Live Stream',
-                    embedUrl: youtubeStatus.embedUrl,
-                    channelName: 'Clarvs'
-                });
-            }
+            let data = null;
+            try { const r = await fetch('/api/roster');              if (r.ok) data = await r.json(); } catch {}
+            if (!data) { const r = await fetch('/scraper/config/roster.json'); if (r.ok) data = await r.json(); }
 
-            // Controlla Twitch BettaTV
-            const twitchStatus = await checkTwitchLive();
-            if (twitchStatus.isLive) {
-                liveStreams.push({
-                    channel: 'bettatv',
-                    platform: 'twitch',
-                    title: twitchStatus.title || 'Live Stream',
-                    embedUrl: twitchStatus.embedUrl,
-                    channelName: 'BettaTV'
-                });
-            }
-
-        } catch (error) {
-            console.error('[Live Check] Errore nel controllo live:', error);
-        }
-
-        return liveStreams;
-    }
-
-    /**
-     * Controlla se Clarvs è live su YouTube (senza API)
-     */
-    async function checkYouTubeLive() {
-        try {
-            console.log('[YouTube Check] Controllo Clarvs...');
-            
-            // Prova a caricare la pagina live
-            const response = await fetch('https://www.youtube.com/@clarvs/live', {
-                method: 'HEAD',
-                mode: 'no-cors'
-            });
-
-            // Metodo alternativo: controlla tramite iframe test
-            return new Promise((resolve) => {
-                const testFrame = document.createElement('iframe');
-                testFrame.style.display = 'none';
-                testFrame.style.position = 'absolute';
-                testFrame.style.width = '1px';
-                testFrame.style.height = '1px';
-                
-                // URL che reindirizza alla live se attiva
-                testFrame.src = 'https://www.youtube.com/@clarvs/live';
-                
-                testFrame.onload = () => {
-                    try {
-                        // Se l'iframe carica senza errori, potrebbe esserci una live
-                        setTimeout(() => {
-                            // Controlla se l'URL dell'iframe è cambiato (indica live attiva)
-                            try {
-                                const currentSrc = testFrame.contentWindow?.location?.href;
-                                if (currentSrc && currentSrc.includes('/watch?v=')) {
-                                    const videoId = currentSrc.split('v=')[1]?.split('&')[0];
-                                    if (videoId) {
-                                        resolve({
-                                            isLive: true,
-                                            title: 'Clarvs Live Stream',
-                                            embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`
-                                        });
-                                        testFrame.remove();
-                                        return;
-                                    }
-                                }
-                            } catch (e) {
-                                console.log('[YouTube Check] CORS limitation, usando metodo alternativo');
-                            }
-                            
-                            // Metodo fallback: prova a caricare embed live diretto
-                            checkYouTubeLiveAlternative().then(resolve);
-                            testFrame.remove();
-                        }, 2000);
-                    } catch (error) {
-                        resolve({ isLive: false });
-                        testFrame.remove();
-                    }
-                };
-
-                testFrame.onerror = () => {
-                    resolve({ isLive: false });
-                    testFrame.remove();
-                };
-
-                document.body.appendChild(testFrame);
-            });
-
-        } catch (error) {
-            console.log('[YouTube Check] Errore:', error);
-            return { isLive: false };
-        }
-    }
-
-    /**
-     * Metodo alternativo per YouTube usando embed test
-     */
-    async function checkYouTubeLiveAlternative() {
-        return new Promise((resolve) => {
-            // Testa l'embed live diretto
-            const testEmbed = document.createElement('iframe');
-            testEmbed.style.display = 'none';
-            testEmbed.style.position = 'absolute';
-            testEmbed.style.width = '1px';
-            testEmbed.style.height = '1px';
-            
-            // URL embed per il canale live
-            testEmbed.src = 'https://www.youtube.com/embed/live_stream?channel=UCpCdPCwKOJmMPRWsVA2ljQ&autoplay=0&mute=1';
-            
-            testEmbed.onload = () => {
-                setTimeout(() => {
-                    // Se l'embed si carica senza errori, assume live attiva
-                    resolve({
-                        isLive: true,
-                        title: 'Clarvs Live Stream',
-                        embedUrl: 'https://www.youtube.com/embed/live_stream?channel=UCpCdPCwKOJmMPRWsVA2ljQ&autoplay=1&mute=0'
+            if (data) {
+                for (const p of data) {
+                    const tw = parseTwitchUser(p.socials?.twitch);
+                    const yt = parseYtHandle(p.socials?.youtube);
+                    if (!tw && !yt) continue;
+                    const key = `${tw}|${yt}`;
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    result.push({
+                        id: `roster_${p.id}`, name: p.name,
+                        avatar: p.imageUrl || null,
+                        twitch: tw, youtubeUrl: p.socials?.youtube || null,
+                        youtubeHandle: yt, source: 'roster'
                     });
-                    testEmbed.remove();
-                }, 1500);
-            };
+                }
+            }
+        } catch (e) { console.error('[TV] Errore roster:', e); }
 
-            testEmbed.onerror = () => {
-                resolve({ isLive: false });
-                testEmbed.remove();
-            };
+        // 2. Lista manuale
+        let manual = [];
+        try { const r = await fetch('/api/tv/streamers'); if (r.ok) manual = await r.json(); } catch {}
+        if (!manual.length) {
+            try { const raw = localStorage.getItem('clarvsTV_streamers'); if (raw) manual = JSON.parse(raw); } catch {}
+        }
+        for (const s of manual) {
+            const key = `${s.twitch || ''}|${s.youtubeHandle || ''}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            result.push({ ...s, source: 'manual' });
+        }
 
-            document.body.appendChild(testEmbed);
+        streamers = result;
+        console.log(`[TV] ${streamers.length} streamer (${result.filter(s=>s.source==='roster').length} roster, ${result.filter(s=>s.source==='manual').length} manuali)`);
+    }
+
+    // ── Twitch API ────────────────────────────────────────────────────────────
+    async function checkTwitchLive() {
+        const clientId    = tvConfig?.twitch?.clientId?.trim();
+        const accessToken = tvConfig?.twitch?.accessToken?.trim();
+        if (!clientId || !accessToken) {
+            if (noApiWarning) noApiWarning.style.display = 'flex';
+            return {};
+        }
+        if (noApiWarning) noApiWarning.style.display = 'none';
+
+        const list = streamers.filter(s => s.twitch);
+        if (!list.length) return {};
+
+        const qs = list.map(s => `user_login=${encodeURIComponent(s.twitch)}`).join('&');
+        try {
+            const r = await fetch(`https://api.twitch.tv/helix/streams?${qs}`, {
+                headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (!r.ok) {
+                console.error(`[Twitch API] Errore ${r.status}${r.status === 401 ? ' – token scaduto' : ''}`);
+                return {};
+            }
+            const json = await r.json();
+            const liveMap = {};
+            for (const s of (json.data || [])) {
+                liveMap[s.user_login.toLowerCase()] = {
+                    isLive: true, platform: 'twitch',
+                    title: s.title, gameName: s.game_name,
+                    viewerCount: s.viewer_count,
+                    thumbnailUrl: s.thumbnail_url?.replace('{width}','320').replace('{height}','180')
+                };
+            }
+            const result = {};
+            for (const s of list) {
+                result[s.id] = liveMap[s.twitch.toLowerCase()] || { isLive: false, platform: 'twitch' };
+                console.log(`[Twitch] ${s.twitch} → ${result[s.id].isLive ? '🔴 LIVE' : '⚫ offline'}`);
+            }
+            return result;
+        } catch (e) { console.error('[Twitch API] Fetch fallito:', e); return {}; }
+    }
+
+    // ── YouTube API ───────────────────────────────────────────────────────────
+    async function checkYouTubeLive() {
+        const apiKey = tvConfig?.youtube?.apiKey?.trim();
+        if (!apiKey) return {};
+
+        const list = streamers.filter(s => s.youtubeHandle || s.youtubeUrl);
+        if (!list.length) return {};
+
+        const result = {};
+        if (!tvConfig._ytCache) tvConfig._ytCache = {};
+
+        await Promise.all(list.map(async s => {
+            try {
+                // Risolve handle → Channel ID
+                let channelId = tvConfig._ytCache[s.id];
+                if (!channelId) {
+                    const handle = s.youtubeHandle;
+                    if (!handle) return;
+                    const cr = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(handle)}&key=${apiKey}`);
+                    if (!cr.ok) return;
+                    channelId = (await cr.json()).items?.[0]?.id;
+                    if (!channelId) return;
+                    tvConfig._ytCache[s.id] = channelId;
+                }
+
+                // Controlla live
+                const lr = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`);
+                if (!lr.ok) return;
+                const lj = await lr.json();
+
+                if (lj.items?.length) {
+                    const v = lj.items[0];
+                    result[s.id] = {
+                        isLive: true, platform: 'youtube',
+                        videoId: v.id.videoId,
+                        title: v.snippet.title,
+                        thumbnailUrl: v.snippet.thumbnails?.medium?.url
+                    };
+                    console.log(`[YouTube] ${s.youtubeHandle} → 🔴 LIVE`);
+                } else {
+                    // Ultimi 3 video
+                    const vr = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=3&key=${apiKey}`);
+                    const vj = vr.ok ? await vr.json() : { items: [] };
+                    result[s.id] = {
+                        isLive: false, platform: 'youtube', channelId,
+                        lastVideos: (vj.items || []).map(v => ({
+                            videoId: v.id.videoId,
+                            title: v.snippet.title,
+                            channelName: s.name,
+                            streamerId: s.id,
+                            publishedAt: v.snippet.publishedAt,
+                            thumbnailUrl: v.snippet.thumbnails?.medium?.url
+                                || `https://i.ytimg.com/vi/${v.id.videoId}/mqdefault.jpg`
+                        }))
+                    };
+                    console.log(`[YouTube] ${s.youtubeHandle} → ⚫ offline (${result[s.id].lastVideos.length} video)`);
+                }
+            } catch (e) { console.error(`[YouTube] Errore ${s.youtubeHandle}:`, e); }
+        }));
+
+        return result;
+    }
+
+    // ── Live check globale ────────────────────────────────────────────────────
+    async function checkAllLive() {
+        if (!streamers.length) return;
+        console.log('[Live Check] Avvio...');
+
+        const [twitchData, ytData] = await Promise.all([checkTwitchLive(), checkYouTubeLive()]);
+
+        for (const s of streamers) {
+            const tw = twitchData[s.id] || {};
+            const yt = ytData[s.id]     || {};
+            if (tw.isLive) {
+                liveData[s.id] = { ...tw };
+            } else if (yt.isLive) {
+                liveData[s.id] = { ...yt };
+            } else {
+                liveData[s.id] = {
+                    isLive: false,
+                    hasTwitch: !!s.twitch,
+                    hasYoutube: !!(s.youtubeHandle || s.youtubeUrl),
+                    lastVideos: yt.lastVideos || []
+                };
+            }
+        }
+
+        // Raccoglie tutti i video YouTube ordinati per data (più recente prima)
+        const videos = [];
+        for (const s of streamers) {
+            for (const v of (liveData[s.id]?.lastVideos || [])) {
+                videos.push({ ...v, channelName: s.name, streamerId: s.id, avatar: s.avatar });
+            }
+        }
+        allVideos = videos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+
+        renderChannels();
+        renderYoutubeVideos();
+        handleAutoSwitch();
+        updateLastCheck();
+        console.log('[Live Check] Completato');
+    }
+
+    // ── Auto-switch ───────────────────────────────────────────────────────────
+    function handleAutoSwitch() {
+        if (currentMode === 'manual') return;
+
+        const liveStreamer = streamers.find(s => liveData[s.id]?.isLive);
+
+        if (liveStreamer && currentMode !== 'live') {
+            console.log(`[Auto-Switch] ${liveStreamer.name} è live`);
+            loadStreamerPlayer(liveStreamer);
+            currentMode = 'live';
+            showLiveNotification(liveStreamer);
+        } else if (!liveStreamer && currentMode === 'live') {
+            // Nessuno più live → torna al video più recente
+            loadMostRecentVideo();
+        }
+    }
+
+    // ── Player: video più recente ─────────────────────────────────────────────
+    function loadMostRecentVideo() {
+        if (!allVideos.length) {
+            showPlaceholder();
+            return;
+        }
+        const v = allVideos[0];
+        const s = streamers.find(x => x.id === v.streamerId);
+
+        activeId    = v.streamerId;
+        currentMode = 'video';
+
+        tvScreen.innerHTML = `
+            <iframe
+                src="https://www.youtube.com/embed/${v.videoId}?autoplay=1&rel=0&modestbranding=1"
+                frameborder="0" allow="autoplay; fullscreen" allowfullscreen
+                width="100%" height="100%" title="${escHtml(v.title)}">
+            </iframe>`;
+
+        setStatus(false);
+        setNowPlaying(true, v.channelName, '<i class="fab fa-youtube" style="color:#ff0000"></i> YouTube');
+        if (backBtn) backBtn.style.display = 'none'; // non c'è playlist a cui tornare
+        if (s) highlightChannel(s.id);
+    }
+
+    // ── Player: stream live ───────────────────────────────────────────────────
+    function loadStreamerPlayer(s) {
+        const info     = liveData[s.id] || {};
+        const hostname = window.location.hostname || 'localhost';
+
+        let embedUrl = '', platformLabel = '';
+
+        if ((info.platform === 'twitch' || !info.platform) && s.twitch) {
+            embedUrl      = `https://player.twitch.tv/?channel=${s.twitch}&parent=${hostname}&autoplay=true`;
+            platformLabel = `<i class="fab fa-twitch" style="color:#9147ff"></i> Twitch`;
+        } else if (info.platform === 'youtube' && info.videoId) {
+            embedUrl      = `https://www.youtube.com/embed/${info.videoId}?autoplay=1`;
+            platformLabel = `<i class="fab fa-youtube" style="color:#ff0000"></i> YouTube Live`;
+        } else { return; }
+
+        activeId = s.id;
+
+        tvScreen.innerHTML = `
+            <iframe src="${embedUrl}" frameborder="0"
+                allow="autoplay; fullscreen; microphone; camera"
+                allowfullscreen width="100%" height="100%"
+                title="${escHtml(s.name)} – Live">
+            </iframe>`;
+
+        setStatus(true, s.name);
+        setNowPlaying(true, s.name, platformLabel);
+        if (backBtn) backBtn.style.display = 'inline-flex';
+        highlightChannel(s.id);
+    }
+
+    // ── Player: video YouTube specifico ───────────────────────────────────────
+    function loadYouTubeVideo(videoId, channelName, streamerId) {
+        activeId    = streamerId;
+        currentMode = 'manual';
+
+        tvScreen.innerHTML = `
+            <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1"
+                frameborder="0" allow="autoplay; fullscreen" allowfullscreen
+                width="100%" height="100%">
+            </iframe>`;
+
+        setStatus(false);
+        setNowPlaying(true, channelName, '<i class="fab fa-youtube" style="color:#ff0000"></i> YouTube');
+        if (backBtn) backBtn.style.display = 'inline-flex';
+        highlightChannel(streamerId);
+    }
+
+    // ── Placeholder quando non c'è niente da caricare ─────────────────────────
+    function showPlaceholder() {
+        currentMode = 'idle';
+        activeId    = null;
+        tvScreen.innerHTML = `
+            <div class="tv-placeholder">
+                <i class="fas fa-tv"></i>
+                <p>Nessun contenuto disponibile</p>
+                <small>Aggiungi canali YouTube nella sezione Admin per vedere i video</small>
+            </div>`;
+        setStatus(false);
+        setNowPlaying(false);
+    }
+
+    // ── UI: Canali ────────────────────────────────────────────────────────────
+    function renderChannels() {
+        if (!channelsGrid) return;
+        const list = filteredStreamers();
+
+        if (!streamers.length) {
+            channelsGrid.innerHTML = `
+                <div class="streamers-empty">
+                    <i class="fas fa-satellite-dish"></i>
+                    <p>Nessun canale configurato.</p>
+                    <small>Aggiungi link Twitch/YouTube ai player nel <strong>Roster</strong>.</small>
+                </div>`;
+        } else if (!list.length) {
+            channelsGrid.innerHTML = `
+                <div class="streamers-empty">
+                    <i class="fas fa-filter"></i>
+                    <p>Nessuno con questo filtro.</p>
+                </div>`;
+        } else {
+            channelsGrid.innerHTML = '';
+            list.forEach(s => channelsGrid.appendChild(buildChannelCard(s)));
+        }
+
+        const n = streamers.filter(s => liveData[s.id]?.isLive).length;
+        if (liveCountBadge) {
+            liveCountBadge.textContent  = n;
+            liveCountBadge.style.display = n > 0 ? 'inline-flex' : 'none';
+        }
+    }
+
+    function filteredStreamers() {
+        switch (currentFilter) {
+            case 'live':    return streamers.filter(s => liveData[s.id]?.isLive);
+            case 'twitch':  return streamers.filter(s => s.twitch);
+            case 'youtube': return streamers.filter(s => s.youtubeHandle || s.youtubeUrl);
+            default:        return streamers;
+        }
+    }
+
+    function buildChannelCard(s) {
+        const info     = liveData[s.id] || {};
+        const isLive   = !!info.isLive;
+        const isActive = activeId === s.id;
+
+        const thumbBg = isLive && info.thumbnailUrl
+            ? `style="background-image:url('${info.thumbnailUrl}')"` : '';
+
+        const badges = [];
+        if (s.twitch) badges.push(`
+            <a href="https://twitch.tv/${escHtml(s.twitch)}" target="_blank"
+               class="platform-badge twitch" onclick="event.stopPropagation()">
+                <i class="fab fa-twitch"></i> ${escHtml(s.twitch)}
+            </a>`);
+        if (s.youtubeUrl) badges.push(`
+            <a href="${escHtml(s.youtubeUrl)}" target="_blank"
+               class="platform-badge youtube" onclick="event.stopPropagation()">
+                <i class="fab fa-youtube"></i> ${escHtml(s.youtubeHandle || 'YouTube')}
+            </a>`);
+
+        let meta = '';
+        if (isLive) {
+            meta = `
+                <div class="streamer-live-meta">
+                    ${info.gameName    ? `<span class="live-game"><i class="fas fa-gamepad"></i> ${escHtml(info.gameName)}</span>` : ''}
+                    ${info.viewerCount != null ? `<span class="live-viewers"><i class="fas fa-eye"></i> ${fmtViewers(info.viewerCount)}</span>` : ''}
+                </div>
+                ${info.title ? `<p class="live-title">${escHtml(trunc(info.title, 50))}</p>` : ''}`;
+        }
+
+        const card = document.createElement('div');
+        card.className = ['streamer-card', isLive && 'is-live', isActive && 'is-active']
+            .filter(Boolean).join(' ');
+        card.dataset.streamerId = s.id;
+
+        card.innerHTML = `
+            <div class="sc-thumb ${isLive ? 'has-live-thumb' : ''}" ${thumbBg}>
+                <img src="${escHtml(s.avatar || '../assets/Images/players/default.jpg')}"
+                     alt="${escHtml(s.name)}" class="sc-avatar" onerror="this.style.display='none'">
+                ${isLive ? `
+                    <div class="sc-live-badge"><span class="live-dot-sm"></span> LIVE</div>
+                    <div class="sc-watch-overlay">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Guarda ora</span>
+                    </div>` : ''}
+                ${isActive ? `<div class="sc-on-air"><i class="fas fa-tv"></i> IN ONDA</div>` : ''}
+            </div>
+            <div class="sc-body">
+                <div class="sc-name-row">
+                    <span class="sc-name">${escHtml(s.name)}</span>
+                    ${isLive ? `<span class="live-pill"><span class="live-dot-sm"></span> LIVE</span>` : ''}
+                </div>
+                ${meta}
+                <div class="sc-platforms">${badges.join('')}</div>
+            </div>`;
+
+        card.addEventListener('click', () => {
+            if (!s.twitch && !s.youtubeHandle && !s.youtubeUrl) return;
+            if (activeId === s.id && currentMode !== 'idle') {
+                // Deseleziona
+                loadMostRecentVideo();
+                return;
+            }
+            currentMode = 'manual';
+            loadStreamerPlayer(s);
+        });
+
+        return card;
+    }
+
+    function highlightChannel(streamerId) {
+        document.querySelectorAll('.streamer-card').forEach(c => {
+            c.classList.toggle('is-active', String(c.dataset.streamerId) === String(streamerId));
         });
     }
 
-    /**
-     * Controlla se BettaTV è live su Twitch (senza API) - Metodo migliorato
-     */
-    async function checkTwitchLive() {
-        try {
-            console.log('[Twitch Check] Controllo BettaTV...');
-            
-            // Prova prima il metodo di fetch della pagina Twitch
-            try {
-                const response = await fetch('https://www.twitch.tv/bettatv', {
-                    method: 'HEAD',
-                    mode: 'no-cors'
-                });
-                console.log('[Twitch Check] Fetch response ricevuta');
-            } catch (e) {
-                console.log('[Twitch Check] Fetch bloccata da CORS, uso metodo alternativo');
-            }
-            
-            return new Promise((resolve) => {
-                // Metodo 1: Prova a caricare la pagina Twitch in un iframe invisibile
-                const testFrame = document.createElement('iframe');
-                testFrame.style.display = 'none';
-                testFrame.style.position = 'absolute';
-                testFrame.style.width = '1px';
-                testFrame.style.height = '1px';
-                
-                // Carica la pagina del canale (non il player)
-                testFrame.src = 'https://www.twitch.tv/bettatv';
-                
-                let resolved = false;
-                
-                testFrame.onload = () => {
-                    if (resolved) return;
-                    
-                    setTimeout(() => {
-                        if (resolved) return;
-                        
-                        // Prova metodo 2: Test del player embed con parametri specifici per live
-                        testPlayerEmbed(resolve);
-                        testFrame.remove();
-                    }, 3000);
-                };
+    // ── UI: Video YouTube ─────────────────────────────────────────────────────
+    function renderYoutubeVideos() {
+        if (!videosGrid || !videosSection) return;
 
-                testFrame.onerror = () => {
-                    if (resolved) return;
-                    resolved = true;
-                    console.log('[Twitch Check] Errore caricamento pagina Twitch');
-                    resolve({ isLive: false });
-                    testFrame.remove();
-                };
+        if (!allVideos.length) {
+            videosSection.style.display = 'none';
+            return;
+        }
 
-                document.body.appendChild(testFrame);
-                
-                // Timeout di sicurezza
-                setTimeout(() => {
-                    if (!resolved) {
-                        resolved = true;
-                        console.log('[Twitch Check] Timeout - assumo non live');
-                        resolve({ isLive: false });
-                        testFrame.remove();
-                    }
-                }, 8000);
-            });
+        videosSection.style.display = 'block';
+        videosGrid.innerHTML = '';
 
-        } catch (error) {
-            console.log('[Twitch Check] Errore:', error);
-            return { isLive: false };
+        allVideos.forEach(v => {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            card.innerHTML = `
+                <div class="video-thumb">
+                    <img src="${escHtml(v.thumbnailUrl)}" alt="${escHtml(v.title)}" loading="lazy">
+                    <div class="video-play-overlay"><i class="fas fa-play-circle"></i></div>
+                </div>
+                <div class="video-info">
+                    <p class="video-title" title="${escHtml(v.title)}">${escHtml(trunc(v.title, 60))}</p>
+                    <div class="video-meta">
+                        <span class="video-channel">
+                            ${v.avatar ? `<img src="${escHtml(v.avatar)}" class="video-channel-avatar" onerror="this.style.display='none'">` : ''}
+                            ${escHtml(v.channelName)}
+                        </span>
+                        <span class="video-date">${relativeDate(v.publishedAt)}</span>
+                    </div>
+                </div>`;
+
+            card.addEventListener('click', () => loadYouTubeVideo(v.videoId, v.channelName, v.streamerId));
+            videosGrid.appendChild(card);
+        });
+    }
+
+    // ── UI helpers ────────────────────────────────────────────────────────────
+    function setStatus(isLive, name = '') {
+        if (!streamStatus) return;
+        if (isLive) {
+            streamStatus.className = 'stream-status live';
+            streamStatus.innerHTML = `<span class="dot live"></span><span>🔴 LIVE: ${escHtml(name)}</span>`;
+        } else {
+            streamStatus.className = 'stream-status';
+            streamStatus.innerHTML = `<span class="dot"></span><span>📺 Clarvs TV</span>`;
         }
     }
-    
-    /**
-     * Testa il player embed Twitch con controlli più specifici
-     */
-    function testPlayerEmbed(resolve) {
-        const playerTest = document.createElement('iframe');
-        playerTest.style.display = 'none';
-        playerTest.style.position = 'absolute';
-        playerTest.style.width = '1px';
-        playerTest.style.height = '1px';
-        
-        // Usa parametri che dovrebbero funzionare solo con live stream attive
-        const hostname = window.location.hostname || 'localhost';
-        playerTest.src = `https://player.twitch.tv/?channel=bettatv&parent=${hostname}&muted=true&autoplay=false&allowfullscreen=false`;
-        
-        let playerResolved = false;
-        
-        playerTest.onload = () => {
-            if (playerResolved) return;
-            
-            setTimeout(() => {
-                if (playerResolved) return;
-                playerResolved = true;
-                
-                // Se il player si carica, potrebbe essere live, ma non è garantito
-                // Per ora assumiamo che NON sia live per evitare falsi positivi
-                console.log('[Twitch Check] Player caricato ma assumo non live (evito falsi positivi)');
-                resolve({ isLive: false });
-                playerTest.remove();
-            }, 2000);
-        };
 
-        playerTest.onerror = () => {
-            if (playerResolved) return;
-            playerResolved = true;
-            console.log('[Twitch Check] Errore player - non live');
-            resolve({ isLive: false });
-            playerTest.remove();
-        };
-
-        document.body.appendChild(playerTest);
-    }
-
-    /**
-     * Controlla stream live e cambia modalità se necessario
-     */
-    async function checkAndSwitchMode() {
-        try {
-            console.log('[Clarvs TV] Controllo stream live...');
-            const liveStreams = await checkLiveStreams();
-            
-            if (liveStreams && liveStreams.length > 0) {
-                // Priorità: YouTube Clarvs prima di Twitch BettaTV
-                const primaryStream = liveStreams.find(s => s.channel === 'clarvs') || liveStreams[0];
-                
-                if (currentMode !== 'live' || currentLiveStream?.channel !== primaryStream.channel) {
-                    console.log(`[Clarvs TV] 🔴 LIVE ATTIVA: ${primaryStream.channelName} - ${primaryStream.title}`);
-                    switchToLive(primaryStream);
-                }
-            } else {
-                if (currentMode !== 'playlist') {
-                    console.log('[Clarvs TV] 📺 Torno alla playlist programmata');
-                    switchToPlaylist();
-                }
-            }
-        } catch (error) {
-            console.error('[Clarvs TV] Errore nel controllo live:', error);
-            // In caso di errore, assicurati che la playlist sia attiva
-            if (currentMode !== 'playlist') {
-                console.log('[Clarvs TV] Errore controllo - Avvio playlist di sicurezza');
-                switchToPlaylist();
-            }
+    function setNowPlaying(active, name = '', platform = '') {
+        if (!nowPlayingBar) return;
+        nowPlayingBar.style.display = active ? 'flex' : 'none';
+        if (active) {
+            if (nowPlayingName)     nowPlayingName.textContent = name;
+            if (nowPlayingPlatform) nowPlayingPlatform.innerHTML = platform;
         }
     }
-    
-    let currentLiveStream = null; // Traccia lo stream live corrente
 
-    /**
-     * Passa alla modalità live
-     */
-    function switchToLive(stream) {
-        currentMode = 'live';
-        currentLiveStream = stream;
-        
-        console.log(`[Clarvs TV] Switching to live: ${stream.channelName} (${stream.platform})`);
-        
-        tvScreen.innerHTML = `
-            <iframe
-                src="${stream.embedUrl}"
-                frameborder="0" 
-                allow="autoplay; fullscreen; microphone; camera" 
-                allowfullscreen
-                width="100%"
-                height="100%"
-                title="${stream.channelName} Live Stream">
-            </iframe>
-        `;
-        
-        updateStreamStatus(true, stream);
-        showLiveNotification(stream);
-        
-        // Ferma l'aggiornamento della playlist
-        if (window.playlistInterval) {
-            clearInterval(window.playlistInterval);
-        }
+    function updateLastCheck() {
+        if (!lastCheckEl) return;
+        const d = new Date();
+        lastCheckEl.textContent = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
     }
-    
-    /**
-     * Passa alla modalità playlist
-     */
-    function switchToPlaylist() {
-        currentMode = 'playlist';
-        currentLiveStream = null;
-        showSyncedTV();
-        
-        // Aggiorna ogni 30 secondi per mantenere la sincronizzazione
-        if (window.playlistInterval) {
-            clearInterval(window.playlistInterval);
-        }
-        window.playlistInterval = setInterval(showSyncedTV, 30000);
-    }
-    
-    /**
-     * Mostra notifica quando va in live
-     */
-    function showLiveNotification(stream) {
-        // Crea notifica
-        const notification = document.createElement('div');
-        notification.className = 'live-notification';
-        notification.innerHTML = `
+
+    function showLiveNotification(s) {
+        document.querySelector('.live-notification')?.remove();
+        const info = liveData[s.id] || {};
+        const plat = info.platform === 'youtube'
+            ? '<i class="fab fa-youtube" style="color:#ff4444"></i>'
+            : '<i class="fab fa-twitch"  style="color:#9147ff"></i>';
+        const el = document.createElement('div');
+        el.className = 'live-notification';
+        el.innerHTML = `
             <div class="notification-content">
                 <i class="fas fa-broadcast-tower"></i>
                 <div>
                     <strong>🔴 LIVE ORA!</strong>
-                    <p>${stream.channelName} è in diretta</p>
-                    <span>${stream.title}</span>
+                    <p>${escHtml(s.name)} è in diretta ${plat}</p>
+                    ${info.gameName ? `<span>${escHtml(info.gameName)}</span>` : ''}
                 </div>
-            </div>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        // Rimuovi dopo 5 secondi
-        setTimeout(() => {
-            notification.remove();
-        }, 5000);
-    }
-    
-    /**
-     * Calcola quale video deve essere riprodotto in base all'orario corrente
-     * e a quale secondo del video deve partire
-     */
-    function getCurrentVideoAndTime() {
-        const now = new Date();
-        
-        // Calcola i secondi passati dall'inizio del giorno (UTC)
-        const nowUTCSeconds = now.getUTCHours() * 3600 + 
-                             now.getUTCMinutes() * 60 + 
-                             now.getUTCSeconds();
-        
-        // Calcola i secondi dall'inizio della playlist
-        const playlistStartSeconds = playlistStartHour * 3600 + 
-                                   playlistStartMinute * 60 + 
-                                   playlistStartSecond;
-        
-        // Calcola i secondi dall'inizio del ciclo corrente della playlist
-        const totalDuration = durations.reduce((a, b) => a + b, 0);
-        let secondsSincePlaylistStart = (nowUTCSeconds - playlistStartSeconds + totalDuration) % totalDuration;
-        
-        // Trova il video corretto e il punto di inizio
-        let videoIndex = 0;
-        let secondsIntoVideo = secondsSincePlaylistStart;
-        
-        while (videoIndex < durations.length && secondsIntoVideo >= durations[videoIndex]) {
-            secondsIntoVideo -= durations[videoIndex];
-            videoIndex++;
-        }
-        
-        // Debug: mostra informazioni nella console
-        console.log(`[TV Sync] Ora UTC: ${now.getUTCHours()}:${now.getUTCMinutes()}:${now.getUTCSeconds()}`);
-        console.log(`[TV Sync] Riproduco video ${videoIndex + 1}/${playlistVideos.length} (ID: ${playlistVideos[videoIndex]})`);
-        console.log(`[TV Sync] Al secondo: ${Math.floor(secondsIntoVideo)}/${durations[videoIndex]}`);
-        
-        return { 
-            videoId: playlistVideos[videoIndex], 
-            start: Math.floor(secondsIntoVideo)
-        };
+                <button class="notif-close-btn" onclick="this.closest('.live-notification').remove()">✕</button>
+            </div>`;
+        document.body.appendChild(el);
+        setTimeout(() => el?.remove(), 9_000);
     }
 
-    /**
-     * Mostra il video corretto nella TV in base all'orario sincronizzato
-     */
-    function showSyncedTV() {
-        try {
-            const { videoId, start } = getCurrentVideoAndTime();
-            
-            console.log(`[TV Sync] Caricamento video: https://www.youtube.com/embed/${videoId}`);
-            
-            // Crea l'iframe YouTube con i parametri per:
-            // - autoplay
-            // - partire dal secondo corretto
-            // - nascondere i controlli
-            // - disabilitare la tastiera
-            // - minimizzare i branding
-            // - disabilitare i video correlati
-            tvScreen.innerHTML = `
-                <iframe
-                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&start=${start}&controls=0&disablekb=1&modestbranding=1&rel=0&enablejsapi=1"
-                    frameborder="0" 
-                    allow="autoplay; fullscreen" 
-                    allowfullscreen
-                    width="100%"
-                    height="100%"
-                    title="Clarvs TV Player">
-                </iframe>
-            `;
-            
-            // Aggiorna lo stato
-            updateStreamStatus(false); // false perché è playlist, non live
-            
-            console.log(`[TV Sync] Video caricato con successo`);
-            
-        } catch (error) {
-            console.error("[TV Sync] Errore nel caricamento del video:", error);
-            
-            // Mostra un messaggio di errore con opzione di ricarica manuale
-            tvScreen.innerHTML = `
-                <div class="tv-error" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; background: #111; color: white; text-align: center;">
-                    <h3>⚠️ Errore nel caricamento</h3>
-                    <p>Impossibile caricare il contenuto della playlist</p>
-                    <button onclick="location.reload()" style="background: #00bcd4; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 10px; cursor: pointer;">
-                        🔄 Ricarica Pagina
-                    </button>
-                </div>
-            `;
-            
-            updateStreamStatus(false);
-        }
-    }
-
-    /**
-     * Aggiorna lo stato dello stream
-     */
-    function updateStreamStatus(isLive, streamInfo = null) {
-        if (isLive && streamInfo) {
-            streamStatus.innerHTML = `
-                <span class="dot live"></span>
-                <span>🔴 LIVE: ${streamInfo.channelName}</span>
-            `;
-            streamStatus.className = 'stream-status live';
-        } else if (isLive) {
-            streamStatus.innerHTML = `
-                <span class="dot live"></span>
-                <span>🔴 LIVE: Streaming attivo</span>
-            `;
-            streamStatus.className = 'stream-status live';
-        } else {
-            streamStatus.innerHTML = `
-                <span class="dot"></span>
-                <span>📺 Playlist programmata</span>
-            `;
-            streamStatus.className = 'stream-status';
-        }
-    }
-    
-    /**
-     * Inizializza i controlli della TV
-     */
-    function initializeControls() {
-        // Bottone fullscreen migliorato
-        if (fullscreenBtn) {
-            fullscreenBtn.addEventListener('click', function() {
-                toggleFullscreen();
-            });
-        }
-        
-        // Controllo manuale per forzare check live
-        const forceCheckBtn = document.createElement('button');
-        forceCheckBtn.textContent = 'Controlla Live';
-        forceCheckBtn.className = 'force-check-btn';
-        forceCheckBtn.addEventListener('click', checkAndSwitchMode);
-        
-        if (document.querySelector('.tv-controls')) {
-            document.querySelector('.tv-controls').appendChild(forceCheckBtn);
-        }
-        
-        // Gestione eventi fullscreen
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    }
-    
-    /**
-     * Gestisce il toggle fullscreen
-     */
+    // ── Fullscreen ────────────────────────────────────────────────────────────
     function toggleFullscreen() {
-        const tvContainer = document.querySelector('.tv-container');
-        
-        if (!tvContainer) {
-            console.error('[Clarvs TV] Container non trovato per fullscreen');
-            return;
+        const c = document.querySelector('.tv-container');
+        if (!c) return;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            (c.requestFullscreen || c.webkitRequestFullscreen || c.mozRequestFullScreen).call(c);
+        } else {
+            (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
         }
-        
-        try {
-            if (!document.fullscreenElement && 
-                !document.webkitFullscreenElement && 
-                !document.mozFullScreenElement) {
-                
-                // Entra in fullscreen
-                if (tvContainer.requestFullscreen) {
-                    tvContainer.requestFullscreen();
-                } else if (tvContainer.webkitRequestFullscreen) {
-                    tvContainer.webkitRequestFullscreen();
-                } else if (tvContainer.mozRequestFullScreen) {
-                    tvContainer.mozRequestFullScreen();
-                } else {
-                    console.warn('[Clarvs TV] Fullscreen non supportato');
-                }
-            } else {
-                // Esci da fullscreen
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
-                }
-            }
-        } catch (error) {
-            console.error('[Clarvs TV] Errore fullscreen:', error);
-        }
-    }
-    
-    /**
-     * Gestisce i cambiamenti di stato fullscreen
-     */
-    function handleFullscreenChange() {
-        const isFullscreen = !!(document.fullscreenElement || 
-                               document.webkitFullscreenElement || 
-                               document.mozFullScreenElement);
-        
-        if (fullscreenBtn) {
-            fullscreenBtn.textContent = isFullscreen ? 'Esci da Schermo Intero' : 'Schermo Intero';
-        }
-        
-        console.log(`[Clarvs TV] Fullscreen: ${isFullscreen ? 'ON' : 'OFF'}`);
     }
 
-    // --- INIZIALIZZAZIONE ---
-    
-    // Inizializza la TV con controllo live/playlist
-    initializeTV();
-    
-    // Debug
-    console.log("[Clarvs TV] Sistema inizializzato con controllo live automatico");
+    // ── Init ──────────────────────────────────────────────────────────────────
+    async function init() {
+        await loadConfig();
+        await loadStreamers();
+
+        // Placeholder mentre si caricano i dati
+        showPlaceholder();
+        renderChannels();
+
+        // Controlli
+        fullscreenBtn?.addEventListener('click', toggleFullscreen);
+        document.addEventListener('fullscreenchange', () => {
+            if (fullscreenBtn) {
+                fullscreenBtn.innerHTML = document.fullscreenElement
+                    ? '<i class="fas fa-compress"></i> Esci'
+                    : '<i class="fas fa-expand"></i> Schermo Intero';
+            }
+        });
+
+        backBtn?.addEventListener('click', () => {
+            currentMode = 'video';
+            loadMostRecentVideo();
+        });
+
+        refreshLiveBtn?.addEventListener('click', async () => {
+            refreshLiveBtn.classList.add('spinning');
+            await checkAllLive();
+            refreshLiveBtn.classList.remove('spinning');
+        });
+
+        document.querySelectorAll('.streamer-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.streamer-filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderChannels();
+            });
+        });
+
+        // Primo live check + carica video più recente
+        await checkAllLive();
+
+        // Se nessuno è live, carica il video più recente automaticamente
+        if (currentMode !== 'live') {
+            loadMostRecentVideo();
+        }
+
+        // Controllo periodico ogni 5 minuti
+        liveTimer = setInterval(checkAllLive, 5 * 60_000);
+        console.log('[Clarvs TV] Pronto.');
+    }
+
+    init();
 });

@@ -7,8 +7,9 @@
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/home.css">
     <link rel="stylesheet" href="assets/css/animations.css">
+    <link rel="stylesheet" href="assets/css/polish.css">
     <link rel="icon" href="assets/Icons/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Three.js per le particelle 3D -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -30,6 +31,9 @@
                 <li><a href="pagine/roster.html" class="nav-link">Roster</a></li>
                 <li><a href="pagine/staff.html" class="nav-link">Staff</a></li>
                 <li><a href="pagine/tv.html" class="nav-link">Clarvs TV</a></li>
+                <li class="staff-only" style="display: none;">
+                    <a href="pagine/admin.html" class="nav-link">Admin</a>
+                </li>
             </ul>
             <button class="mobile-menu-btn">
                 <span></span>
@@ -58,69 +62,17 @@
         <section class="team-preview reveal" aria-labelledby="team-heading">
             <h2 id="team-heading" class="section-title">Il Nostro Team</h2>
             <div class="roster-slider-wrapper">
+                <button class="slider-btn prev" onclick="previousSlide()" aria-label="Slide precedente">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
                 <div class="roster-slider">
-                    <button class="slider-arrow left" onclick="previousSlide()" aria-label="Slide precedente">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    
                     <div class="roster-container" id="rosterContainer">
-                        <!-- Pro Players -->
-                        <div class="roster-card">
-                            <div class="card-content">
-                                <div class="player-initial">GB</div>
-                                <h3>Gabbs</h3>
-                                <p class="player-role">PRO PLAYER</p>
-                                <div class="social-icons">
-                                    <a href="https://x.com/gabbsfn" target="_blank"><i class="fab fa-twitter"></i></a>
-                                    <a href="https://www.instagram.com/gabbsfn?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank"><i class="fab fa-instagram"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="roster-card">
-                            <div class="card-content">
-                                <div class="player-initial">IC</div>
-                                <h3>Iceleoh</h3>
-                                <p class="player-role">PRO PLAYER</p>
-                                <div class="social-icons">
-                                    <a href="https://x.com/iceLeoh" target="_blank"><i class="fab fa-twitter"></i></a>
-                                    <a href="https://www.instagram.com/iceleoh?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank"><i class="fab fa-instagram"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Content Creator -->
-                        <div class="roster-card">
-                            <div class="card-content">
-                                <div class="player-initial">BT</div>
-                                <h3>BETTAtv</h3>
-                                <p class="player-role">CONTENT CREATOR</p>
-                                <div class="social-icons">
-                                    <a href="https://www.instagram.com/bettatv_/" target="_blank"><i class="fab fa-instagram"></i></a>
-                                    <a href="https://www.youtube.com/@BETTAtv13" target="_blank"><i class="fab fa-youtube"></i></a>
-                                    <a href="https://www.twitch.tv/bettatv" target="_blank"><i class="fab fa-twitch"></i></a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Mafix - Content Creator -->
-                        <div class="roster-card">
-                            <div class="card-content">
-                                <div class="player-initial">MF</div>
-                                <h3>Mafix</h3>
-                                <p class="player-role">CONTENT CREATOR</p>
-                                <div class="social-icons">
-                                    <a href="https://www.tiktok.com/@mafixfnrr?_r=1&_t=ZN-919L650SA5u" target="_blank"><i class="fab fa-tiktok"></i></a>
-                                    <a href="https://www.instagram.com/mafix_w/" target="_blank"><i class="fab fa-instagram"></i></a>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Cards caricate dinamicamente da home.js -->
                     </div>
-                    
-                    <button class="slider-arrow right" onclick="nextSlide()" aria-label="Slide successiva">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
                 </div>
+                <button class="slider-btn next" onclick="nextSlide()" aria-label="Slide successiva">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
                 
                 <div class="slider-dots">
                     <span class="dot active"></span>
@@ -130,6 +82,18 @@
             </div>
         </section>
         
+        <!-- Ticker Risultati Recenti -->
+        <section class="results-ticker reveal">
+            <div class="ticker-header">
+                <h2>Risultati Recenti</h2>
+            </div>
+            <div class="ticker-wrapper">
+                <div class="ticker-track" id="ticker-track">
+                    <!-- Items caricati dinamicamente da home.js -->
+                </div>
+            </div>
+        </section>
+
         <section class="news-section reveal" aria-labelledby="news-heading" id="news">
             <div class="container">
                 <h2 id="news-heading">Ultime Notizie</h2>
@@ -176,6 +140,7 @@
 
     <!-- Scripts -->
     <script src="js/main.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/home.js"></script>
     <script src="js/socialfeed.js"></script>
     <script src="js/interactions.js"></script>
