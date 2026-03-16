@@ -1,8 +1,15 @@
-﻿'use strict';
+'use strict';
 const router = require('express').Router();
 const { supabase } = require('../../config/supabase');
 const { requireAuth } = require('../../middleware/auth');
 const { auditLog } = require('../../middleware/audit');
+
+function normalizeImageUrl(url) {
+    if (!url) return null;
+    // Rimuove http://localhost:PORT o http://127.0.0.1:PORT dai percorsi immagine
+    // In modo che funzionino sia in locale sia su Render
+    return url.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, '');
+}
 
 function dbToPlayer(row) {
     return {
@@ -11,7 +18,7 @@ function dbToPlayer(row) {
         category: row.category,
         role: row.role,
         game: row.game,
-        imageUrl: row.image_url,
+        imageUrl: normalizeImageUrl(row.image_url),
         ftTrackerUrl: row.ft_tracker_url,
         ftTrackerUsername: row.ft_tracker_username,
         ftPlatform: row.ft_platform,
