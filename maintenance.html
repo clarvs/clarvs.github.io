@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarvs TV</title>
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/tv.css">
+    <link rel="stylesheet" href="/assets/css/animations.css">
+    <link rel="stylesheet" href="/assets/css/polish.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/assets/images/favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+    <header class="header">
+        <nav class="nav main-nav">
+            <div class="logo">
+                <img src="/assets/images/logo.png" alt="CLARVS Logo">
+                <span>CLARVS</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/index.html" class="nav-link">Home</a></li>
+                <li><a href="/pages/roster.html" class="nav-link">Roster</a></li>
+                <li><a href="/pages/staff.html" class="nav-link">Staff</a></li>
+                <li><a href="/pages/tv.html" class="nav-link">Clarvs TV</a></li>
+                <li id="ccc-nav-item" style="display:none;"><a href="/pages/ccc.html" class="nav-link">CCC</a></li>
+                <li class="staff-only" style="display:none;">
+                    <a href="/pages/admin.html" class="nav-link">Admin</a>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <div class="page-content">
+            <div class="tv-page">
+
+                <h1><i class="fas fa-tv"></i> Clarvs TV</h1>
+
+                <!-- ── Layout principale: Player + Chat ── -->
+                <div class="tv-main-layout">
+
+                    <!-- Colonna sinistra: Player -->
+                    <div class="tv-left-section">
+
+                        <!-- Barra "Ora stai guardando" (visibile solo quando si guarda uno streamer) -->
+                        <div class="tv-now-playing" id="tv-now-playing" style="display:none;">
+                            <span class="now-playing-label"><i class="fas fa-dot-circle" style="color:#ff1744"></i> Ora stai guardando:</span>
+                            <span class="now-playing-name" id="now-playing-name"></span>
+                            <span class="now-playing-platform" id="now-playing-platform"></span>
+                        </div>
+
+                        <!-- Player principale -->
+                        <div class="tv-container" id="tv-container">
+                            <div class="tv-screen" id="tv-screen">
+                                <div class="tv-loading">
+                                    <i class="fas fa-circle-notch fa-spin"></i>
+                                    <span>Caricamento...</span>
+                                </div>
+                            </div>
+                            <div class="tv-controls">
+                                <div class="stream-status" id="stream-status">
+                                    <span class="dot"></span>
+                                    <span>📺 Playlist programmata</span>
+                                </div>
+                                <div class="tv-actions">
+                                    <button id="back-to-playlist-btn" class="back-to-playlist-btn" style="display:none;">
+                                        <i class="fas fa-arrow-left"></i> Video più recente
+                                    </button>
+                                    <button id="fullscreen-btn" class="fullscreen-btn">
+                                        <i class="fas fa-expand"></i> Schermo Intero
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Colonna destra: Chat -->
+                    <div class="tv-chat-section">
+                        <div class="chat-container">
+                            <div class="chat-header">
+                                <h3><i class="fas fa-comments"></i> Chat Live</h3>
+                                <div class="chat-viewers">
+                                    <i class="fas fa-users"></i>
+                                    <span id="viewer-count">0</span> online
+                                </div>
+                            </div>
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="chat-welcome">
+                                    <i class="fas fa-tv"></i>
+                                    <p>Benvenuto nella chat di Clarvs TV!</p>
+                                    <p>Rispetta le regole e divertiti! 🎮</p>
+                                </div>
+                            </div>
+                            <div class="chat-input-section">
+                                <div class="chat-input-container">
+                                    <input type="text" id="chat-input"
+                                           placeholder="Scrivi un messaggio..."
+                                           maxlength="200" autocomplete="off">
+                                    <button id="chat-send-btn" disabled>
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                                <div class="chat-username-setup" id="username-setup">
+                                    <input type="text" id="username-input"
+                                           placeholder="Il tuo nickname..."
+                                           maxlength="20" autocomplete="off">
+                                    <button id="username-set-btn">Imposta Nome</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- fine tv-main-layout -->
+
+                <!-- ── Sezione: I Nostri Canali ── -->
+                <div class="tv-section" id="channels-section">
+                    <div class="tv-section-header">
+                        <div class="tv-section-title">
+                            <h2><i class="fas fa-broadcast-tower"></i> I Nostri Canali</h2>
+                            <span class="live-count-badge" id="live-count-badge" style="display:none;">0</span>
+                        </div>
+                        <div class="tv-section-controls">
+                            <div class="streamer-filters">
+                                <button class="streamer-filter-btn active" data-filter="all">Tutti</button>
+                                <button class="streamer-filter-btn" data-filter="live">
+                                    <span class="live-dot-sm"></span> Live
+                                </button>
+                                <button class="streamer-filter-btn" data-filter="twitch">
+                                    <i class="fab fa-twitch"></i> Twitch
+                                </button>
+                                <button class="streamer-filter-btn" data-filter="youtube">
+                                    <i class="fab fa-youtube"></i> YouTube
+                                </button>
+                            </div>
+                            <div class="streamers-meta">
+                                <span class="last-check" id="last-check-time"></span>
+                                <button class="refresh-live-btn" id="refresh-live-btn" title="Aggiorna stato live">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="no-api-warning" id="no-api-warning" style="display:none;">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Credenziali Twitch API mancanti — configura <code>TWITCH_CLIENT_ID</code> e <code>TWITCH_ACCESS_TOKEN</code> nel file <code>.env</code> e avvia il server.</span>
+                    </div>
+
+                    <div class="channels-grid" id="channels-grid">
+                        <div class="streamers-loading">
+                            <i class="fas fa-circle-notch fa-spin"></i>
+                            <span>Caricamento canali...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Sezione: Video YouTube ── -->
+                <div class="tv-section" id="videos-section" style="display:none;">
+                    <div class="tv-section-header">
+                        <div class="tv-section-title">
+                            <h2><i class="fab fa-youtube"></i> Video YouTube</h2>
+                        </div>
+                    </div>
+                    <div class="videos-grid" id="videos-grid">
+                        <div class="streamers-loading">
+                            <i class="fas fa-circle-notch fa-spin"></i>
+                            <span>Caricamento video...</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="social-links">
+            <!-- Caricati dinamicamente da main.js -->
+        </div>
+        <p>&copy; 2019 Clarvs Esport. Tutti i diritti riservati.</p>
+    </footer>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/tv-config.js"></script><!-- credenziali API – editare questo file direttamente -->
+    <script src="/js/tv.js"></script>
+    <script src="/js/tv-chat.js"></script>
+</body>
+</html>

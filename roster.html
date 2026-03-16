@@ -1,0 +1,846 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarvs - Admin</title>
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <link rel="stylesheet" href="/assets/css/animations.css">
+    <link rel="stylesheet" href="/assets/css/polish.css">
+    <link rel="stylesheet" href="/assets/css/ccc.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/assets/images/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>.roster-subtab.active{background:rgba(255,255,255,0.12)!important;color:#fff!important;}.roster-subtab:hover{background:rgba(255,255,255,0.08)!important;color:rgba(255,255,255,0.8)!important;}</style>
+</head>
+
+<body style="background: linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #111111 100%);">
+    <!-- Access Control -->
+    <div id="access-denied" class="access-denied" style="display: none;">
+        <div class="access-denied-content">
+            <div class="access-denied-icon"><i class="fas fa-lock"></i></div>
+            <h2>Accesso Riservato</h2>
+            <p>Questa sezione è riservata esclusivamente ai membri dello staff di Clarvs.</p>
+            <p>Effettua il login per accedere al pannello admin.</p>
+            <button id="login-redirect" class="access-btn">
+                <i class="fas fa-sign-in-alt"></i> Accedi
+            </button>
+            <a href="/index.html" class="access-btn secondary">
+                <i class="fas fa-home"></i> Torna alla Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Header Originale -->
+    <header class="header">
+        <nav class="nav main-nav">
+            <div class="logo">
+                <img src="/assets/images/logo.png" alt="CLARVS Logo">
+                <span>CLARVS</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/index.html" class="nav-link">Home</a></li>
+                <li><a href="/pages/roster.html" class="nav-link">Roster</a></li>
+                <li><a href="/pages/staff.html" class="nav-link">Staff</a></li>
+                <li><a href="/pages/tv.html" class="nav-link">Clarvs TV</a></li>
+                <li id="ccc-nav-item" style="display:none;"><a href="/pages/ccc.html" class="nav-link">CCC</a></li>
+                <li class="staff-only" style="display: none;">
+                    <a href="/pages/admin.html" class="nav-link active">Admin</a>
+                </li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main Container Originale -->
+    <main class="main-container staff-only" style="display: none; padding-top: 100px;">
+        <div class="page-content">
+            <div class="admin-page">
+                <!-- Header Admin -->
+                <div class="admin-header">
+                    <h1 class="animate-text-glow animate-slide-up">
+                        <i class="fas fa-shield-alt"></i> Pannello Admin
+                    </h1>
+                    <div class="staff-welcome" id="staff-welcome">
+                        <p>Pannello di amministrazione Clarvs</p>
+                    </div>
+                    <div class="admin-actions" style="margin-top:1rem; display:flex; justify-content:center; gap:10px;">
+                        <button id="force-scan-btn" class="run-btn">
+                            <i class="fas fa-sync-alt"></i> Forza Scansione
+                        </button>
+                        <div id="force-scan-status" class="status-mini"></div>
+                    </div>
+                </div>
+
+                <!-- Redesigned Maintenance Section -->
+                <div id="maintenance-panel" class="section-box" style="display:none; margin-bottom: 2rem; border-color: rgba(245, 158, 11, 0.2);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 2rem;">
+                        <div>
+                            <h2 style="color: #f59e0b; margin-bottom: 0.5rem;"><i class="fas fa-wrench"></i> Modalità Manutenzione</h2>
+                            <p id="maint-status-text" style="font-size: 0.9rem; color: rgba(255,255,255,0.5);"></p>
+                        </div>
+                        <button id="maint-toggle-btn" class="run-btn" style="min-width: 180px; justify-content: center;"></button>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr; gap: 1.5rem; background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03);">
+                        <div class="form-group" style="width: 100%;">
+                            <label for="maint-msg-input" style="font-size: 0.85rem; margin-bottom: 0.6rem;"><i class="fas fa-comment-alt"></i> Messaggio Pubblico (Cosa vedranno i visitatori)</label>
+                            <input type="text" id="maint-msg-input" placeholder="Il sito è attualmente in manutenzione..." style="width: 100%; font-size: 1.1rem; padding: 1.1rem 1.4rem;">
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: end;">
+                            <div class="form-group">
+                                <label for="maint-end-input" style="font-size: 0.85rem; margin-bottom: 0.6rem;"><i class="fas fa-calendar-alt"></i> Fine Stimata (Data e Ora Locale)</label>
+                                <input type="datetime-local" id="maint-end-input" style="width: 100%; font-size: 1.1rem; padding: 1rem 1.4rem;">
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1.5rem; background: rgba(255,255,255,0.03); padding: 1rem 1.5rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); height: 100%; justify-content: space-between;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.8);">Mantenere Branding?</span>
+                                    <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4);">Se attivo, il logo Clarvs sarà visibile.</span>
+                                </div>
+                                <label class="switch-small"><input type="checkbox" id="maint-branding-toggle" checked><span class="slider round"></span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+                        <button id="maint-save-settings-btn" class="run-btn accent" style="padding: 0.6rem 2rem; font-size: 0.85rem;">
+                            <i class="fas fa-save"></i> Salva Impostazioni
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Buttons Originali -->
+                <div class="admin-tabs" role="tablist" aria-label="Sezioni Admin">
+                    <button class="admin-tab active" data-tab="roster" role="tab" id="tab-btn-roster" aria-selected="true" aria-controls="tab-roster"><i class="fas fa-users" aria-hidden="true"></i> Roster</button>
+                    <button class="admin-tab" data-tab="scouting" role="tab" id="tab-btn-scouting" aria-selected="false" aria-controls="tab-scouting" tabindex="-1"><i class="fas fa-crosshairs" aria-hidden="true"></i> Scouting</button>
+                    <button class="admin-tab" data-tab="tv" role="tab" id="tab-btn-tv" aria-selected="false" aria-controls="tab-tv" tabindex="-1"><i class="fas fa-tv" aria-hidden="true"></i> Clarvs TV</button>
+                    <button class="admin-tab" data-tab="home" role="tab" id="tab-btn-home" aria-selected="false" aria-controls="tab-home" tabindex="-1"><i class="fas fa-home" aria-hidden="true"></i> Home</button>
+                    <button class="admin-tab" data-tab="links" role="tab" id="tab-btn-links" aria-selected="false" aria-controls="tab-links" tabindex="-1"><i class="fas fa-link" aria-hidden="true"></i> Link</button>
+                    <button class="admin-tab" data-tab="staff" role="tab" id="tab-btn-staff" aria-selected="false" aria-controls="tab-staff" tabindex="-1"><i class="fas fa-user-shield" aria-hidden="true"></i> Staff</button>
+                    <button class="admin-tab" data-tab="ccc" role="tab" id="tab-btn-ccc" aria-selected="false" aria-controls="tab-ccc" tabindex="-1"><i class="fas fa-trophy" aria-hidden="true"></i> CCC</button>
+                </div>
+
+                <!-- TAB: ROSTER -->
+                <div id="tab-roster" class="tab-content active" role="tabpanel" aria-labelledby="tab-btn-roster" tabindex="0">
+                    <!-- Sub-tabs Roster -->
+                    <div style="display:flex;gap:8px;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:0.75rem;">
+                        <button class="roster-subtab active" data-subtab="players" style="background:rgba(255,255,255,0.08);border:none;color:#fff;padding:0.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:background 0.2s;"><i class="fas fa-gamepad"></i> Player</button>
+                        <button class="roster-subtab" data-subtab="staffers" style="background:transparent;border:none;color:rgba(255,255,255,0.5);padding:0.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:background 0.2s;"><i class="fas fa-users"></i> Staffer</button>
+                    </div>
+                    <!-- Sub-tab: Player -->
+                    <div class="roster-subtab-content" data-subtab="players">
+                        <div class="section-box">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                                <h2>Gestione Roster</h2>
+                                <button id="add-player-btn" class="run-btn"><i class="fas fa-plus"></i> Aggiungi Player</button>
+                            </div>
+                            <div class="roster-grid" id="roster-tbody" role="list" aria-label="Lista player nel roster"></div>
+                        </div>
+                    </div>
+                    <!-- Sub-tab: Staffer -->
+                    <div class="roster-subtab-content" data-subtab="staffers" style="display:none;">
+                        <div class="section-box">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                                <h2>Gestione Staffer</h2>
+                                <button id="add-staffer-btn" class="run-btn"><i class="fas fa-plus"></i> Aggiungi Staffer</button>
+                            </div>
+                            <div class="roster-grid" id="staff-members-tbody" role="list" aria-label="Lista staffer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: SCOUTING -->
+                <div id="tab-scouting" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-scouting" tabindex="0">
+                    <div class="section-box" style="margin-bottom:2rem; border-color: rgba(167,139,250,0.3);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                            <h2 style="color:#a78bfa;"><i class="fas fa-microchip"></i> Motore Talent Score</h2>
+                            <div id="weight-sum-container" style="text-align:right;">
+                                <span id="weight-sum-text" style="font-family:'JetBrains Mono'; font-weight:700;">0.00 / 1.0</span>
+                                <div style="height:4px; width:150px; background:rgba(255,255,255,0.05); border-radius:2px;"><div id="weight-sum-bar" style="height:100%; width:0%; background:#a78bfa;"></div></div>
+                            </div>
+                        </div>
+                        <div id="talent-score-builder-container"></div>
+                        <button id="formula-reload-btn" style="display:none"></button>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                        <h2>Libreria Metriche</h2>
+                        <button id="add-metric-btn" class="run-btn"><i class="fas fa-plus"></i> Nuova Metrica</button>
+                    </div>
+                    <div id="metrics-management-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:1rem; margin-bottom:2rem;"></div>
+
+                    <div style="display:grid; grid-template-columns: 380px 1fr; gap:2rem;">
+                        <div class="scouting-sidebar">
+                            <div class="section-box">
+                                <h2>URL Sorgenti</h2>
+                                <div style="display:flex; gap:8px;">
+                                    <label for="talent-url-input" class="sr-only">URL Tracker</label><input type="text" id="talent-url-input" class="search-input" placeholder="URL Tracker...">
+                                    <button id="add-url-btn" class="run-btn" style="padding:0 1rem;"><i class="fas fa-plus"></i></button>
+                                </div>
+                                <div id="url-list" class="url-list" style="margin-top:1rem;"></div>
+                                <button id="run-scraping-btn" class="run-btn" style="width:100%; margin-top:1rem; justify-content:center;">AVVIA ANALISI</button>
+                                <div id="scraping-status" style="margin-top:10px; font-size:0.8rem; text-align:center;"></div>
+                            </div>
+                            <div class="section-box" style="margin-top:1.5rem; border-color:#2ecc7144;">
+                                <h2 style="color:#2ecc71;">Aggiungi Player Singolo</h2>
+                                <div style="display:flex; gap:8px;">
+                                    <label for="single-scrape-input" class="sr-only">URL Profilo Player Singolo</label><input type="text" id="single-scrape-input" class="search-input" placeholder="URL Profilo...">
+                                    <button id="single-scrape-btn" class="run-btn" style="background:#2ecc71;color:#000;"><i class="fas fa-download"></i></button>
+                                </div>
+                                <div id="single-scrape-status" style="margin-top:8px; font-size:0.75rem; text-align:center;"></div>
+                            </div>
+                            <div class="section-box" style="margin-top:1.5rem;">
+                                <h2>Analisi Rapida</h2>
+                                <div style="display:flex; gap:8px;">
+                                    <label for="lookup-url-input" class="sr-only">URL Profilo Analisi Rapida</label><input type="text" id="lookup-url-input" class="search-input" placeholder="URL Profilo...">
+                                    <button id="lookup-btn" class="run-btn"><i class="fas fa-search"></i></button>
+                                </div>
+                                <div id="lookup-status" style="margin-top:8px; font-size:0.75rem; text-align:center;"></div>
+                            </div>
+                        </div>
+                        <div class="scouting-main">
+                            <div class="section-box">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <h2>Classifica Talenti</h2>
+                                    <div id="leaderboard-info" style="font-size:0.75rem; opacity:0.5;"></div>
+                                </div>
+                                <div id="talent-leaderboard" style="margin-top:1rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: TV -->
+                <div id="tab-tv" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-tv" tabindex="0">
+                    <div class="section-box">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                            <h2>Streamer TV</h2>
+                            <button id="add-tv-streamer-btn" class="run-btn"><i class="fas fa-plus"></i> Aggiungi</button>
+                        </div>
+                        <div class="roster-table-wrapper">
+                            <table class="roster-admin-table">
+                                <thead><tr><th>Nome</th><th>Twitch</th><th>YouTube</th><th>Azioni</th></tr></thead>
+                                <tbody id="tv-streamers-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: HOME -->
+                <div id="tab-home" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-home" tabindex="0">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem;">
+                        <div class="section-box">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                <h3>News</h3>
+                                <button id="add-news-btn" class="run-btn btn-small"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <table class="roster-admin-table">
+                                <thead><tr><th>Titolo</th><th>Data</th><th>Anteprima</th><th>Azioni</th></tr></thead>
+                                <tbody id="news-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div class="section-box">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                                <h3>Eventi</h3>
+                                <button id="add-event-btn" class="run-btn btn-small"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <table class="roster-admin-table">
+                                <thead><tr><th>Evento</th><th>Data</th><th>Ora</th><th>Tipo</th><th>Azioni</th></tr></thead>
+                                <tbody id="events-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="section-box" style="margin-top:2rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                            <h3>Social Feed</h3>
+                            <div style="display:flex; gap:12px; align-items:center;">
+                                <span id="social-save-status"></span>
+                                <button id="add-instagram-btn" class="run-btn btn-small" title="Aggiungi Instagram"><i class="fab fa-instagram"></i></button>
+                                <button id="add-twitter-btn" class="run-btn btn-small" title="Aggiungi Twitter"><i class="fab fa-twitter"></i></button>
+                                <button id="save-social-btn" class="run-btn accent" style="padding:0.5rem 1.5rem;">Salva Social</button>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem;">
+                            <div>
+                                <h4 style="font-size:0.75rem; color:rgba(255,255,255,0.3); margin-bottom:0.5rem; text-transform:uppercase;">Instagram Posts</h4>
+                                <div id="instagram-links-list"></div>
+                            </div>
+                            <div>
+                                <h4 style="font-size:0.75rem; color:rgba(255,255,255,0.3); margin-bottom:0.5rem; text-transform:uppercase;">Twitter / X Feed</h4>
+                                <div id="twitter-links-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: LINK -->
+                <div id="tab-links" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-links" tabindex="0">
+                    <div class="section-box">
+                        <div class="section-header">
+                            <h2><i class="fas fa-link"></i> Gestione Link</h2>
+                            <p>Modifica navigazione e link social del sito.</p>
+                        </div>
+                        <div id="links-container" class="links-grid">
+                            <!-- Link caricati qui -->
+                        </div>
+                        <div class="section-actions" style="margin-top: 2rem;">
+                            <button id="add-link-btn" class="run-btn"><i class="fas fa-plus"></i> Aggiungi Link</button>
+                            <button id="save-links-btn" class="run-btn accent"><i class="fas fa-save"></i> Salva Modifiche</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: STAFF -->
+                <div id="tab-staff" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-staff" tabindex="0">
+                    <div class="section-box" style="margin-bottom:2rem;">
+                        <h2>Invia Invito</h2>
+                        <div style="display:flex; gap:1rem;">
+                            <label for="invite-email-input" class="sr-only">Email Staff da invitare</label><input type="email" id="invite-email-input" class="search-input" placeholder="email staff...">
+                            <button id="invite-btn" class="run-btn">Invia</button>
+                        </div>
+                        <div id="invite-result"></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:2rem;">
+                        <div class="section-box">
+                            <h2>Staff Attivo</h2>
+                            <table class="roster-admin-table"><tbody id="staff-accounts-tbody"></tbody></table>
+                        </div>
+                        <div class="section-box">
+                            <h2>Inviti</h2>
+                            <table class="roster-admin-table"><tbody id="staff-invites-tbody"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                <div id="tab-ccc" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-ccc" tabindex="0" style="display:none;"></div>
+        </div>
+    </main>
+
+    
+
+                <!-- MODALE STAFFER -->
+                <div id="staffer-modal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;">
+                    <div class="modal-content" style="background:#111;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:2rem;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                            <h3 id="staffer-modal-title">Aggiungi Staffer</h3>
+                            <button id="staffer-modal-close" style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;">&times;</button>
+                        </div>
+                        <form id="staffer-form">
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label style="display:block;margin-bottom:0.4rem;font-size:0.85rem;color:rgba(255,255,255,0.6);">Nome *</label>
+                                <input type="text" id="sf-name" class="search-input" placeholder="Nome staffer" required style="width:100%;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label style="display:block;margin-bottom:0.4rem;font-size:0.85rem;color:rgba(255,255,255,0.6);">Sezione</label>
+                                <select id="sf-section" style="width:100%;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);color:#fff;padding:0.75rem;border-radius:8px;">
+                                    <option value="leader">Leader</option>
+                                    <option value="staffer" selected>Staffer</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label style="display:block;margin-bottom:0.4rem;font-size:0.85rem;color:rgba(255,255,255,0.6);">Ruolo</label>
+                                <input type="text" id="sf-role" class="search-input" placeholder="es. Leader, Staff, Manager" style="width:100%;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label style="display:block;margin-bottom:0.4rem;font-size:0.85rem;color:rgba(255,255,255,0.6);">Area / Game</label>
+                                <input type="text" id="sf-game" class="search-input" placeholder="es. Fortnite, Management" style="width:100%;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:1rem;">
+                                <label style="display:block;margin-bottom:0.4rem;font-size:0.85rem;color:rgba(255,255,255,0.6);">URL Immagine</label>
+                                <input type="text" id="sf-imageUrl" class="search-input" placeholder="/assets/Images/players/nome.jpg" style="width:100%;">
+                            </div>
+                            <div class="form-group" style="margin-bottom:1.5rem;">
+                                <label style="display:block;margin-bottom:0.4rem;font-size:0.85rem;color:rgba(255,255,255,0.6);">Ordine (sort)</label>
+                                <input type="number" id="sf-sortOrder" class="search-input" value="0" min="0" style="width:100%;">
+                            </div>
+                            <div style="display:flex;gap:1rem;justify-content:flex-end;">
+                                <button type="button" id="staffer-form-cancel" class="action-btn">Annulla</button>
+                                <button type="submit" class="run-btn">Salva</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- MODALE ROSTER (REDESIGN PROFESSIONALE) -->
+    <div id="roster-modal" class="player-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="roster-modal-title">
+        <div class="player-modal-content" style="max-width:850px; background:#0a0a0f; border:1px solid rgba(0,188,212,0.3); padding:0; overflow:hidden;">
+            <div class="player-modal-header" style="padding:1.5rem 2rem; background:rgba(0,188,212,0.1); border-bottom:1px solid rgba(255,255,255,0.05);">
+                <h3 id="roster-modal-title" style="margin:0; font-size:1.2rem; letter-spacing:1px; font-weight:900;">GESTIONE PLAYER</h3>
+                <button type="button" id="roster-modal-close" class="player-modal-close" aria-label="Chiudi">&times;</button>
+            </div>
+            <form id="roster-form" style="padding:2rem;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:3rem;">
+                    <!-- Colonna Sinistra -->
+                    <div>
+                        <div style="color:#00bcd4; font-size:0.75rem; font-weight:900; text-transform:uppercase; margin-bottom:1.5rem; letter-spacing:1px;"><i class="fas fa-user-circle"></i> Informazioni Base</div>
+                        <div class="form-group"><label for="f-name">Nickname</label><input type="text" id="f-name" required placeholder="es. Betta"></div>
+                        <div class="form-group"><label for="f-category">Categoria Team</label>
+                            <select id="f-category" style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:0.8rem; border-radius:8px; width:100%;">
+                                <option value="proPlayer">Pro Player</option>
+                                <option value="talent">Talent</option>
+                                <option value="academy">Academy</option>
+                                <option value="contentCreator">Content Creator</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="f-imageUrl">Avatar / Immagine (URL)</label><input type="text" id="f-imageUrl" placeholder="https://..."></div>
+                    </div>
+                    <!-- Colonna Destra -->
+                    <div>
+                        <div style="color:#2ecc71; font-size:0.75rem; font-weight:900; text-transform:uppercase; margin-bottom:1.5rem; letter-spacing:1px;"><i class="fas fa-link"></i> Tracking & Social</div>
+                        <div class="form-group"><label for="f-ftTrackerUrl">Profilo Fortnite Tracker (URL)</label><input type="text" id="f-ftTrackerUrl" placeholder="https://fortnitetracker.com/profile/all/..."></div>
+                        
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-top:1.5rem;">
+                            <div class="form-group"><label for="f-twitch"><i class="fab fa-twitch" aria-hidden="true"></i> Twitch</label><input type="text" id="f-twitch"></div>
+                            <div class="form-group"><label for="f-youtube"><i class="fab fa-youtube" aria-hidden="true"></i> YouTube</label><input type="text" id="f-youtube"></div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                            <div class="form-group"><label for="f-instagram"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</label><input type="text" id="f-instagram"></div>
+                            <div class="form-group"><label for="f-twitter"><i class="fab fa-twitter" aria-hidden="true"></i> Twitter (X)</label><input type="text" id="f-twitter"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Campi nascosti ma necessari al DB -->
+                <input type="hidden" id="f-game" value="Fortnite">
+                <input type="hidden" id="f-role" value="Player">
+                <input type="hidden" id="f-ftTrackerUsername" value="">
+                <input type="hidden" id="f-ftPlatform" value="pc">
+                <input type="hidden" id="f-ftRegion" value="EU">
+                <input type="hidden" id="f-tiktok" value="">
+
+                <div style="margin-top:2.5rem; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:flex-end; gap:1rem;">
+                    <button type="button" id="form-cancel-btn" class="access-btn secondary" style="padding:0.75rem 2rem;">Annulla</button>
+                    <button type="submit" class="run-btn" style="padding:0.75rem 3rem;"><i class="fas fa-save"></i> SALVA PLAYER</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODALE TV STREAMER -->
+    <div id="tv-streamer-modal" class="player-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="tv-streamer-modal-title">
+        <div class="player-modal-content roster-form-modal" style="max-width:500px;">
+            <div class="player-modal-header">
+                <h3 id="tv-streamer-modal-title">Gestione Streamer</h3>
+                <button type="button" id="tv-streamer-modal-close" class="player-modal-close" aria-label="Chiudi">&times;</button>
+            </div>
+            <form id="tv-streamer-form">
+                <div class="form-group"><label for="tvs-name">Nome</label><input type="text" id="tvs-name" required></div>
+                <div class="form-group"><label for="tvs-avatar">Avatar URL</label><input type="text" id="tvs-avatar"></div>
+                <div class="form-group"><label for="tvs-twitch">Twitch</label><input type="text" id="tvs-twitch"></div>
+                <div class="form-group"><label for="tvs-youtube">YouTube</label><input type="text" id="tvs-youtube"></div>
+                <div class="form-actions">
+                    <button type="button" id="tvs-cancel-btn" class="access-btn secondary">Annulla</button>
+                    <button type="submit" class="run-btn">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODALE DELETE -->
+    <div id="delete-confirm-modal" class="player-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+        <div class="player-modal-content delete-modal" style="text-align:center; padding:2rem;">
+            <i class="fas fa-exclamation-triangle fa-3x" style="color:#e74c3c; margin-bottom:1rem;"></i>
+            <h2 id="delete-modal-title">Elimina <span id="delete-player-name"></span>?</h2>
+            <div style="margin-top:2rem; display:flex; gap:1rem; justify-content:center;">
+                <button id="delete-cancel-btn" class="access-btn secondary">Annulla</button>
+                <button id="delete-confirm-btn" class="action-btn delete-btn">Elimina</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE ELIMINA STAFFER -->
+    <div id="staffer-delete-modal" class="player-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="staffer-delete-modal-title">
+        <div class="player-modal-content delete-modal" style="text-align:center; padding:2rem;">
+            <i class="fas fa-exclamation-triangle fa-3x" style="color:#e74c3c; margin-bottom:1rem;"></i>
+            <h2 id="staffer-delete-modal-title">Elimina <span id="staffer-delete-name"></span>?</h2>
+            <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;margin-top:0.5rem;">Questa azione non può essere annullata.</p>
+            <div style="margin-top:2rem; display:flex; gap:1rem; justify-content:center;">
+                <button id="staffer-delete-cancel-btn" class="access-btn secondary">Annulla</button>
+                <button id="staffer-delete-confirm-btn" class="action-btn delete-btn"><i class="fas fa-trash"></i> Elimina</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE METRICA AVANZATA -->
+    <div id="add-metric-modal" class="player-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="metric-modal-title">
+        <div class="player-modal-content" style="max-width:1000px; height:94vh; padding:0; overflow:hidden; border:1px solid rgba(0,188,212,0.4); background:#08080c; display:flex; flex-direction:column;">
+            <div class="player-modal-header" style="padding:1.5rem 2rem; background:rgba(0,0,0,0.3); border-bottom:1px solid rgba(255,255,255,0.05); flex-shrink:0;">
+                <h2 id="metric-modal-title" style="font-size:1.3rem; font-weight:900;">CONFIGURATORE METRICA</h2>
+                <button type="button" id="add-metric-modal-close" class="player-modal-close" aria-label="Chiudi">&times;</button>
+            </div>
+            <div class="player-modal-body" style="flex:1; overflow-y:auto; padding:0; display:flex; flex-direction:column;">
+                <div class="metric-flow-nav" style="display:flex; background:rgba(0,0,0,0.4); border-bottom:1px solid rgba(255,255,255,0.05); position:sticky; top:0; z-index:100; height:80px;">
+                    <div class="flow-step" data-step="1" onclick="window.formulaSystem.jumpToStep(1)" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer;">
+                        <div style="font-size:0.9rem; font-weight:800;">COSTRUTTORE</div>
+                    </div>
+                                        <div class="flow-step" data-step="2" onclick="window.formulaSystem.jumpToStep(2)" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer;">
+                        <div style="font-size:0.6rem; opacity:0.4;">MASTER</div><div style="font-size:0.9rem; font-weight:800; color:#a78bfa;">TALENT SCORE</div>
+                    </div>
+                    </div>
+                <div style="padding:2.5rem;">
+                    <div id="fm-sub-tabs" style="display:flex; gap:0; margin-bottom:2rem; background:rgba(0,0,0,0.3); border-radius:12px; padding:4px; border:1px solid rgba(255,255,255,0.05);"><button type="button" id="fm-sub-tab-1" onclick="window.formulaSystem.setPhase(1)" style="flex:1; padding:0.6rem 1rem; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; border:none; background:rgba(0,188,212,0.15); color:#00bcd4; letter-spacing:0.08em; transition:all 0.2s;">INDIVIDUALE</button><button type="button" id="fm-sub-tab-2" onclick="window.formulaSystem.setPhase(2)" style="flex:1; padding:0.6rem 1rem; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; border:none; background:transparent; color:rgba(255,255,255,0.3); letter-spacing:0.08em; transition:all 0.2s;">CONTESTUALE</button></div>
+                    <form id="add-metric-form">
+                        <input type="hidden" id="fm-phase" value="1">
+                        <div id="fm-identity-section" style="background:rgba(255,255,255,0.02); padding:2rem; border-radius:20px; margin-bottom:2.5rem; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="display:grid; grid-template-columns: 250px 1fr; gap:2.5rem;">
+                                <div class="form-group"><label for="fm-key">CHIAVE (ID)</label><input type="text" id="fm-key" required></div>
+                                <div class="form-group"><label for="fm-label">NOME DESCRITTIVO</label><input type="text" id="fm-label" required></div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.02); padding:2.2rem; border-radius:20px; margin-bottom:2.5rem; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                                <div id="fm-section-2-title" style="font-size:0.8rem; font-weight:900;">COSTRUTTORE LOGICO</div>
+                                <div id="fm-weight-sum-container" style="display:none; align-items:center; gap:12px; background:rgba(167,139,250,0.1); padding:8px 20px; border-radius:30px;"><span id="fm-weight-sum-badge" style="font-family:'JetBrains Mono'; font-weight:900;">0.00</span></div>
+                            </div>
+                            <div id="add-metric-visual-builder" style="display:grid; grid-template-columns: 1fr; gap:1rem; margin-bottom:2rem;"></div>
+                            <div id="fm-formula-area">
+                            <div style="margin-top:2rem; display:grid; grid-template-columns: 280px 1fr; gap:3rem; align-items:center;">
+                                <label for="fm-combinator" class="sr-only">Combinatore formula</label><select id="fm-combinator" style="background:rgba(0,0,0,0.6); padding:1rem; border-radius:12px; color:#00bcd4; font-weight:800;">
+                                    <option value="sum">Somma (+)</option>
+                                    <option value="avg">Media (Σ/N)</option>
+                                    <option value="product">Prodotto (×)</option>
+                                    <option value="division">Divisione (÷)</option>
+                                    <option value="delta">Sottrazione (A - B)</option>
+                                </select>
+                                <div id="fm-preview-text" style="font-family:'JetBrains Mono'; background:rgba(0,0,0,0.8); padding:1.8rem; border-radius:15px; border:1px solid rgba(255,255,255,0.05); min-height:3.5rem; display:flex; align-items:center;">—</div>
+                            </div>
+                            <div style="margin-top:1.5rem;">
+                                <div style="font-size:0.7rem; font-weight:900; color:rgba(255,255,255,0.4); margin-bottom:0.5rem; letter-spacing:0.1em;">FORMULA DIRETTA</div>
+                                <label for="fm-expr" class="sr-only">Formula diretta</label>
+                                <textarea id="fm-expr"
+                                    style="width:100%; min-height:72px; background:rgba(0,0,0,0.5); border:1px solid rgba(0,188,212,0.25); color:#e0f7fa; font-family:'JetBrains Mono',monospace; font-size:0.85rem; padding:0.75rem 1rem; border-radius:10px; resize:vertical; box-sizing:border-box; outline:none;"
+                                    oninput="window.formulaSystem.onExprInput()"
+                                    placeholder="es: Math.min(pr / 5000, 1)  oppure  prPercentile * PR_DENSITY"></textarea>
+                            </div>
+                            <details style="margin-top:1rem; cursor:pointer;">
+                                <summary style="font-size:0.65rem; font-weight:900; color:rgba(255,255,255,0.3); letter-spacing:0.1em; user-select:none;">VARIABILI DISPONIBILI</summary>
+                                <div style="margin-top:0.75rem; display:flex; flex-wrap:wrap; gap:6px; padding:1rem; background:rgba(0,0,0,0.3); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.6rem; color:rgba(255,255,255,0.3); width:100%; margin-bottom:4px;">— GREZZE —</span>
+                                    <code style="font-size:0.7rem; background:rgba(0,188,212,0.1); color:#00bcd4; padding:2px 8px; border-radius:4px;">pr</code>
+                                    <code style="font-size:0.7rem; background:rgba(0,188,212,0.1); color:#00bcd4; padding:2px 8px; border-radius:4px;">earnings</code>
+                                    <code style="font-size:0.7rem; background:rgba(0,188,212,0.1); color:#00bcd4; padding:2px 8px; border-radius:4px;">events_total</code>
+                                    <code style="font-size:0.7rem; background:rgba(0,188,212,0.1); color:#00bcd4; padding:2px 8px; border-radius:4px;">avg_top</code>
+                                    <code style="font-size:0.7rem; background:rgba(0,188,212,0.1); color:#00bcd4; padding:2px 8px; border-radius:4px;">avg_top_recent10</code>
+                                    <code style="font-size:0.7rem; background:rgba(0,188,212,0.1); color:#00bcd4; padding:2px 8px; border-radius:4px;">avg_pr_recent10</code>
+                                    <code style="font-size:0.7rem; background:rgba(0,188,212,0.1); color:#00bcd4; padding:2px 8px; border-radius:4px;">N</code>
+                                    <span style="font-size:0.6rem; color:rgba(255,255,255,0.3); width:100%; margin-top:6px; margin-bottom:4px;">— CONTESTUALI —</span>
+                                    <code style="font-size:0.7rem; background:rgba(167,139,250,0.1); color:#a78bfa; padding:2px 8px; border-radius:4px;">prRank</code>
+                                    <code style="font-size:0.7rem; background:rgba(167,139,250,0.1); color:#a78bfa; padding:2px 8px; border-radius:4px;">earningsRank</code>
+                                    <code style="font-size:0.7rem; background:rgba(167,139,250,0.1); color:#a78bfa; padding:2px 8px; border-radius:4px;">prPercentile</code>
+                                    <code style="font-size:0.7rem; background:rgba(167,139,250,0.1); color:#a78bfa; padding:2px 8px; border-radius:4px;">earningsPercentile</code>
+                                    <code style="font-size:0.7rem; background:rgba(167,139,250,0.1); color:#a78bfa; padding:2px 8px; border-radius:4px;">PR_DENSITY</code>
+                                    <code style="font-size:0.7rem; background:rgba(167,139,250,0.1); color:#a78bfa; padding:2px 8px; border-radius:4px;">rank_delta_raw</code>
+                                </div>
+                            </details>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+            <div class="player-modal-footer" style="padding:1.5rem 3rem; background:rgba(0,0,0,0.5); border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                <div style="display:flex; gap:15px;"><button class="access-btn secondary" onclick="window.formulaSystem.exportMetrics()">EXPORT</button><button class="access-btn secondary" onclick="document.getElementById('fm-import-file').click()">IMPORT</button><button class="access-btn secondary" onclick="openAboutModal()" style="background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);"><i class="fas fa-robot"></i> ABOUT SYSTEM</button><label for="fm-import-file" class="sr-only">Importa file metriche</label><input type="file" id="fm-import-file" style="display:none" onchange="window.formulaSystem.importMetrics(event)"></div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                    <div id="fm-validation-error" style="color:#e74c3c; font-size:0.8rem; font-weight:700; height:1rem;"></div>
+                    <button type="submit" form="add-metric-form" id="fm-submit-btn" class="run-btn" disabled style="padding:1rem 3rem; font-size:1rem; font-weight:900; border-radius:15px;">SALVA CONFIGURAZIONE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE PLAYER SINGOLO -->
+    <div id="player-modal" class="player-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="modal-player-name">
+        <div class="player-modal-content">
+            <div class="player-modal-header">
+                <h2 id="modal-player-name"></h2>
+                <button type="button" class="player-modal-close" style="font-size:2rem;cursor:pointer;" aria-label="Chiudi">&times;</button>
+            </div>
+            <div id="modal-player-content" class="player-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- MODALI NEWS/EVENTI -->
+    <div id="news-modal" class="player-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="news-modal-title"><div class="player-modal-content roster-form-modal"><div class="player-modal-header"><h3 id="news-modal-title">Notizia</h3><button type="button" id="news-modal-close" class="player-modal-close" aria-label="Chiudi">&times;</button></div><form id="news-form"><div class="form-group"><label for="fn-title">Titolo</label><input type="text" id="fn-title" required></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;"><div class="form-group"><label for="fn-date">Data</label><input type="text" id="fn-date" required></div><div class="form-group"><label for="fn-image">Avatar/Immagine (URL)</label><input type="text" id="fn-image" placeholder="assets/img/... o link"></div></div><div class="form-group"><label for="fn-content">Testo</label><textarea id="fn-content" required></textarea></div><div class="form-actions"><button type="button" id="news-cancel-btn" class="access-btn secondary">Annulla</button><button type="submit" class="run-btn">Salva</button></div></form></div></div>
+    <div id="event-modal" class="player-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="event-modal-title"><div class="player-modal-content roster-form-modal"><div class="player-modal-header"><h3 id="event-modal-title">Evento</h3><button type="button" id="event-modal-close" class="player-modal-close" aria-label="Chiudi">&times;</button></div><form id="event-form"><div class="form-group"><label for="fe-title">Titolo</label><input type="text" id="fe-title" required></div><div class="form-group"><label for="fe-date">Giorno</label><input type="text" id="fe-date" required></div><div class="form-group"><label for="fe-time">Ora</label><input type="text" id="fe-time" required></div><div class="form-actions"><button type="button" id="event-cancel-btn" class="access-btn secondary">Annulla</button><button type="submit" class="run-btn">Salva</button></div></form></div></div>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/main.js"></script>
+    <script src="/js/auth.js"></script>
+    <!-- Admin modules — load order is critical -->
+    <script src="/js/admin/admin.utils.js"></script>
+    <script src="/js/admin/admin.roster.js"></script>
+    <script src="/js/admin/admin.scouting.js"></script>
+    <script src="/js/admin/admin.tv.js"></script>
+    <script src="/js/admin/admin.home.js"></script>
+    <script src="/js/admin/admin.formula.js"></script>
+    <script src="/js/admin/admin.links.js"></script>
+    <script src="/js/admin/admin.ccc.js"></script>
+    <script src="/js/admin/admin.staff-members.js"></script>
+    <script src="/js/admin/admin.main.js"></script>
+    <script src="/js/staff-admin.js"></script>
+    <script src="/js/maintenance-admin.js"></script>
+    <script src="/js/interactions.js"></script>
+
+    <style>
+        .f-token-var { color: #60a5fa; font-weight: 700; background: rgba(96,165,250,0.1); padding: 2px 6px; border-radius: 4px; }
+        .f-token-num { color: #fff; font-weight: 800; font-family: 'JetBrains Mono'; }
+        .f-token-op { color: #94a3b8; font-weight: 900; margin: 0 6px; }
+        .f-token-badge { background: #00bcd4; color: #000; font-size: 0.6rem; font-weight: 900; padding: 3px 8px; border-radius: 5px; margin-right: 10px; text-transform: uppercase; }
+        .flow-step.active { background: rgba(0, 188, 212, 0.1) !important; border-bottom: 3px solid #00bcd4 !important; opacity: 1 !important; }
+        .flow-step.active div { color: #00bcd4 !important; }
+        
+        /* SweetAlert2 Clarvs Theme */
+        .clarvs-swal-popup { border: 1px solid rgba(255,255,255,0.05) !important; border-radius: 15px !important; box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important; }
+        .clarvs-swal-title { font-family: 'Inter', sans-serif !important; font-weight: 900 !important; color: #fff !important; font-size: 1.5rem !important; }
+        .clarvs-swal-text { font-family: 'Inter', sans-serif !important; color: rgba(255,255,255,0.7) !important; font-size: 0.95rem !important; margin-top: 15px !important; }
+        .clarvs-swal-confirm { border-radius: 8px !important; padding: 12px 24px !important; font-size: 0.9rem !important; margin: 0 8px !important; }
+        .clarvs-swal-cancel { border-radius: 8px !important; padding: 12px 24px !important; font-size: 0.9rem !important; margin: 0 8px !important; background: rgba(255,255,255,0.05) !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.1) !important; }
+        .clarvs-swal-cancel:hover { background: rgba(255,255,255,0.1) !important; }
+    </style>
+
+<!-- MODAL ABOUT SYSTEM -->
+<div id="about-system-modal" style="display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);justify-content:center;align-items:center;padding:1rem;">
+  <div style="background:#09090f;border:1px solid rgba(167,139,250,0.35);border-radius:20px;max-width:780px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 60px rgba(167,139,250,0.12);">
+    <div style="padding:1.5rem 2rem;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:0.75rem;"><span style="font-size:1.4rem;">🤖</span><span style="font-size:1.1rem;font-weight:900;letter-spacing:0.05em;color:#a78bfa;">ABOUT SYSTEM</span></div>
+      <button onclick="document.getElementById('about-system-modal').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.6rem;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <div style="padding:1.5rem 2rem;overflow-y:auto;flex:1;">
+      <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.5rem;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:14px;padding:1.2rem 1.5rem;">
+        <div style="font-size:2rem;flex-shrink:0;">👾</div>
+        <div>
+          <div style="font-size:0.75rem;font-weight:900;letter-spacing:0.1em;color:#a78bfa;margin-bottom:0.4rem;">PYRE — EX STAFFER CLARVS</div>
+          <div style="color:rgba(255,255,255,0.82);font-size:0.92rem;line-height:1.6;">Ciao, sono Pyre, ex staffer del team. Probabilmente sei qui per configurare il sistema di Talent Scouting. Qui sotto trovi il <strong style="color:#a78bfa;">prompt contestuale</strong> da inviare a una qualsiasi intelligenza artificiale che le fornir&agrave; il contesto completo del sistema e ti aiuter&agrave; nella configurazione.</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+        <span style="font-size:0.72rem;font-weight:900;letter-spacing:0.1em;color:rgba(255,255,255,0.35);">PROMPT CONTESTUALE</span>
+        <button id="about-copy-btn" onclick="copyAboutPrompt()" style="display:flex;align-items:center;gap:0.4rem;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:#a78bfa;border-radius:8px;padding:0.4rem 0.9rem;font-size:0.78rem;font-weight:800;cursor:pointer;letter-spacing:0.05em;transition:all 0.2s;"><i class="fas fa-copy"></i> COPIA</button>
+      </div>
+      <textarea id="about-prompt-text" readonly style="width:100%;height:340px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem;color:rgba(255,255,255,0.75);font-size:0.78rem;font-family:monospace;line-height:1.6;resize:none;outline:none;">
+# DOCUMENTAZIONE TECNICA — SISTEMA TALENT SCOUTING CLARVS
+
+
+## COS'E' IL SISTEMA
+
+Il sistema di Talent Scouting di ClarVS e' un motore automatizzato che:
+
+1. Scrapa le classifiche EU di Fortnite Tracker (fortnitetracker.com)
+2. Raccoglie le statistiche di ogni giocatore dal loro profilo
+3. Calcola un punteggio numerico (Talent Score) per ciascun giocatore
+4. Ordina i giocatori in una classifica interna per valutare potenziali reclute
+
+Il Talent Score non misura chi e' il piu' forte in assoluto — per quello basta leggere
+la classifica di Fortnite Tracker. Misura chi e' il miglior investimento per un team,
+secondo i criteri che l'operatore decide di configurare tramite le metriche.
+
+
+## NOTA CRITICA: IL PR DECAY
+
+Il Power Ranking su Fortnite Tracker e' soggetto a decay: i tornei vecchi perdono
+peso progressivamente fino ad azzerarsi nel giro di circa 12-18 mesi.
+
+Questo significa che:
+  — il campo pr NON rappresenta la carriera storica del giocatore
+  — il campo pr rappresenta la costanza nell'ULTIMO ANNO SOLARE circa
+  — il campo earnings invece e' ALL-TIME e non decade mai
+
+Questa asimmetria e' importante da tenere a mente quando si progettano le formule:
+incrociare pr (stagionale) con earnings (all-time) permette di distinguere profili
+molto diversi tra loro.
+
+
+## FLUSSO DEL SISTEMA
+
+STEP 1: Scraping leaderboard (URL classifiche Fortnite Tracker)
+STEP 2: Scraping profilo singolo per ogni giocatore (parallelo, batch da 10)
+STEP 3: Filtro inattivita' — esclusi giocatori con ultimo evento &gt; 60 giorni fa
+STEP 4: Calcolo Talent Score su giocatori eligible
+STEP 5: Salvataggio su Supabase (tabella talent_stats)
+
+## DATI GREZZI RACCOLTI PER OGNI GIOCATORE
+
+  pr                   — Power Ranking EU totale (~ultimi 12 mesi per decay)
+  prRecent10           — Somma PR guadagnato negli ultimi 10 tornei
+  prRecent10SampleSize — Quanti tornei sono stati contati (0-10)
+  earnings             — Prize money totale in $ — ALL-TIME, non decade
+  eventsTotal          — Numero totale di eventi disputati in carriera
+  avgTop               — Media piazzamento generale (piu' basso = meglio)
+  avgTopRecent10       — Media piazzamento ultimi 10 tornei
+  top10Tournaments     — Array [{name, placement, prEarned}] ultimi 10 tornei
+  lastEventDate        — Data ultimo evento (usata per filtro inattivita')
+
+
+## CRITERI DI ELIGIBILITA'
+
+Tutti e quattro i criteri devono essere soddisfatti. I giocatori non eligible vengono
+salvati con talentScore = null ed eligible = false.
+
+  1. Scraping riuscito (success = true)
+  2. pr &gt; 0
+  3. Almeno 6 tornei negli ultimi 10 con prEarned &gt; 0
+  4. Ultimo evento entro 60 giorni (non inattivo)
+
+
+## VARIABILI DISPONIBILI NELLE FORMULE
+
+  VARIABILI GREZZE:
+
+  pr               — Power Ranking EU totale (soggetto a decay)
+  earnings         — Prize money totale in $ (all-time, non decade)
+  eventsTotal      — Numero totale di eventi in carriera (alias: events_total)
+  avg_top          — Media piazzamento generale (0 se non disponibile)
+  avg_top_recent10 — Media piazzamento ultimi 10 tornei
+  avg_pr_recent10  — floor(prRecent10 / 10): PR medio per torneo recente
+  VARIABILI CONTESTUALI (calcolate rispetto al pool di giocatori eligible):
+
+  N                  — Numero totale giocatori eligible nel pool
+  prRank             — Posizione per PR nel pool (1 = migliore)
+  earningsRank       — Posizione per earnings nel pool (1 = migliore)
+  prPercentile       — 0.0 (peggiore PR del pool) a 1.0 (migliore PR del pool)
+  earningsPercentile — 0.0 (meno pagato) a 1.0 (piu' pagato del pool)
+  PR_DENSITY         — prRecent10 / pr: rapporto tra PR recente e totale
+                       range tipico 0.0–0.5. Valore alto = giocatore attivo di recente
+  rank_delta_raw     — (prRank - prDensityRank) / N
+                       &gt; 0: giocatore in crescita (density rank meglio del PR rank)
+                       &lt; 0: giocatore in declino (tanto PR storico, poca attivita')
+
+
+## STRUTTURA FORMULA CONFIG (tabella talent_formula_config)
+
+  key        — ID univoco, solo A-Z 0-9, inizia con lettera, max 20 char
+  expression — Espressione matematica valutata da expr-eval. Deve produrre [0, 1]
+  phase      — 1: metrica base | 2: composita (puo' usare phase 1) | 0: SCORE (sistema)
+  label      — Nome mostrato in UI
+  is_active  — true/false: se escluderla dal calcolo SCORE
+  weight     — Peso nella media pesata finale (vedi regole obbligatorie sotto)
+  is_default — true: metrica di sistema non eliminabile dall'admin panel
+
+
+## CALCOLO DEL TALENT SCORE
+
+  1. Valutazione formule phase 1 (metriche base)
+  2. Valutazione formule phase 2 (metriche composite, possono usare i valori phase 1)
+  3. SCORE = sum(clamp(metric_i, 0, 1) * weight_i) / sum(weight_i)
+     — Considera solo metriche con is_active = true
+     — Ogni valore viene clampato a [0, 1] prima della media
+  4. Risultato: numero tra 0 e 1, in UI moltiplicato x100 (es. 0.723 = 72.3%)
+
+## REGOLE SUI PESI (WEIGHT) — OBBLIGATORIE
+
+  1. La somma totale dei weight di tutte le metriche attive deve fare ESATTAMENTE 1.00
+  2. Ogni singolo weight deve essere un multiplo esatto di 0.05
+     Valori ammessi:  0.05 / 0.10 / 0.15 / 0.20 / 0.25 / 0.30 ... fino a 1.00
+     Valori vietati:  0.12 / 0.22 / 0.33 (qualsiasi non sia multiplo di 0.05)
+  3. Se hai N metriche con peso uguale: weight = 1/N arrotondato al 0.05 piu' vicino
+     Esempio con 5 metriche uguali: 1/5 = 0.20 per ciascuna → somma = 1.00
+
+
+## SINTASSI ESPRESSIONI (libreria expr-eval)
+
+  Funzioni disponibili (NO Math.xxx — usa nomi diretti senza prefisso):
+
+  log(x)      sqrt(x)     abs(x)      floor(x)    ceil(x)     round(x)
+  min(a,b)    max(a,b)    pow(a,b)    exp(x)      sign(x)
+
+  Operatori: + - * / ^ &gt; &lt; &gt;= &lt;= == != ? : (ternario supportato)
+
+  Esempi di sintassi valida:
+  min(1, PR_DENSITY * 3)
+  prPercentile * 0.6 + earningsPercentile * 0.4
+  max(0, rank_delta_raw + 0.5)
+  pr &gt; 5000 ? prPercentile : prPercentile * 0.5
+  log(earnings + 1) / log(100000)
+
+  Errori comuni:
+  Math.min(...)     — SBAGLIATO, usa min(...)
+  prRecent10 / pr   — divisione per zero se pr=0, proteggi con: pr &gt; 0 ? prRecent10/pr : 0
+  eventsTotal       — potrebbe essere 0, proteggi con: max(1, eventsTotal)
+
+## REGOLE D'ORO PER LE FORMULE
+
+  1. Il risultato DEVE essere in [0, 1]: wrappa sempre con min(1, max(0, ...))
+  2. Proteggi tutte le divisioni da possibili zeri con max(1, variabile)
+  3. I percentili (prPercentile, earningsPercentile) sono gia' in [0, 1] — non scalare
+  4. PR_DENSITY e' tipicamente tra 0 e 0.5 — moltiplica per 1.6-3.5 per scalare a [0,1]
+  5. rank_delta_raw e' tra -1 e +1 — scala con 0.5 + (rank_delta_raw * N) dove N &gt; 1
+  6. Ogni metrica deve misurare UN solo aspetto specifico, senza sovrapporsi con altre
+
+
+## ISTRUZIONI PER L'AI CHE LEGGE QUESTA DOCUMENTAZIONE
+
+Hai letto l'architettura completa del sistema ClarVS. Il tuo compito e' aiutare
+l'operatore a configurare le metriche del Talent Score traducendo le sue idee di
+scouting in formule concrete pronte da inserire nell'admin panel.
+
+Quando l'operatore espone un'idea, segui questo processo:
+
+  1. Fai tutte le domande necessarie per capire esattamente cosa vuole ottenere.
+     Non assumere nulla. Chiedi quale profilo di giocatore deve salire, quale deve
+     scendere, se ha soglie numeriche in mente, quanto deve pesare l'idea sul totale.
+
+  2. Continua a fare domande finche' non hai abbastanza chiarezza per tradurre
+     l'idea in una formula precisa e motivata. Una domanda alla volta.
+
+  3. Solo quando hai capito l'idea in modo completo, proponi:
+     — key e label della metrica
+     — l'expression esatta da incollare nel campo expression dell'admin panel
+     — la logica dietro la formula spiegata in modo chiaro
+     — il weight consigliato
+     — la tabella aggiornata di TUTTI i weight attivi con verifica che la somma
+       sia esattamente 1.00 e che ogni singolo peso rispetti lo step di 0.05
+
+  Non proporre mai una formula prima di aver compreso pienamente l'idea.
+  Non inventare variabili che non esistono nella documentazione sopra.
+  Se un'idea non e' realizzabile con le variabili disponibili, dillo chiaramente
+  e spiega cosa mancherebbe per renderla possibile.</textarea>
+    </div>
+    <div style="padding:1rem 2rem;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:flex-end;flex-shrink:0;">
+      <button onclick="document.getElementById('about-system-modal').style.display='none'" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);border-radius:8px;padding:0.5rem 1.4rem;font-size:0.85rem;cursor:pointer;">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openAboutModal() {
+  var m = document.getElementById('about-system-modal');
+  document.body.appendChild(m);
+  m.style.zIndex = '2147483647';
+  m.style.display = 'flex';
+}
+function copyAboutPrompt() {
+  const ta = document.getElementById('about-prompt-text');
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = document.getElementById('about-copy-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class=\"fas fa-check\"></i> COPIATO!';
+    btn.style.background = 'rgba(46,204,113,0.15)';
+    btn.style.borderColor = 'rgba(46,204,113,0.4)';
+    btn.style.color = '#2ecc71';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }, 2000);
+  }).catch(() => { ta.select(); document.execCommand('copy'); });
+}
+// Chiudi modal cliccando fuori
+document.getElementById('about-system-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+</script>
+    <script src="/js/ui/toast.js"></script>
+
+    <footer class="main-footer" style="margin-top:4rem;">
+        <div class="footer-container">
+            <div class="social-links">
+                <a href="https://www.instagram.com/clarvs.gg/" target="_blank"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.youtube.com/@clarvs" target="_blank"><i class="fab fa-youtube"></i></a>
+                <a href="https://x.com/ClarvsTeam" target="_blank"><i class="fab fa-twitter"></i></a>
+            </div>
+            <p>&copy; 2019 Clarvs Esport. Tutti i diritti riservati.</p>
+        </div>
+    </footer>
+</body>
+</html>
