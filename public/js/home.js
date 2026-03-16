@@ -63,8 +63,8 @@ async function loadRosterCards() {
         let statsMap = {};
 
         const [rRes, sRes] = await Promise.all([
-            fetch('/api/roster'),
-            fetch('/api/players/stats')
+            fetch(API_BASE + '/api/roster'),
+            fetch(API_BASE + '/api/players/stats')
         ]);
         if (rRes.ok) roster = await rRes.json();
         if (sRes.ok) {
@@ -132,8 +132,8 @@ async function loadTicker() {
         let rosterData = null;
 
         const [sr, rr] = await Promise.all([
-            fetch('/api/players/stats'),
-            fetch('/api/roster')
+            fetch(API_BASE + '/api/players/stats'),
+            fetch(API_BASE + '/api/roster')
         ]);
         if (sr.ok) statsData  = await sr.json();
         if (rr.ok) rosterData = await rr.json();
@@ -279,7 +279,7 @@ let _homeContent = null;
 async function getHomeContent() {
     if (!_homeContent) {
         try {
-            const res = await fetch('/api/home-content');
+            const res = await fetch(API_BASE + '/api/home-content');
             if (res.ok) _homeContent = await res.json();
         } catch (e) { /* ignora */ }
     }

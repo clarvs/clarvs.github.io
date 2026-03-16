@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Carica da API, fallback su struttura vuota
     try {
-        const res = await fetch('/api/staff');
+        const res = await fetch(API_BASE + '/api/staff');
         if (res.ok) {
             staffData = await res.json();
         }

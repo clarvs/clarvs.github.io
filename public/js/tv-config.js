@@ -8,7 +8,7 @@
 
 window.TV_CONFIG = null;
 
-window.TV_CONFIG_PROMISE = fetch("/api/tv/config")
+window.TV_CONFIG_PROMISE = fetch(API_BASE + "/api/tv/config")
     .then(r => r.ok ? r.json() : null)
     .then(config => {
         if (config) {

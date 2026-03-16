@@ -115,8 +115,8 @@ class CCCSystem {
         v.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:1rem;">Caricamento...</div>';
         try {
             var [edRes, settRes] = await Promise.all([
-                fetch('/api/ccc/editions', { credentials:'include' }),
-                fetch('/api/ccc/settings', { credentials:'include' })
+                fetch(API_BASE + '/api/ccc/editions', { credentials:'include' }),
+                fetch(API_BASE + '/api/ccc/settings', { credentials:'include' })
             ]);
             var editions = await edRes.json();
             var settings = await settRes.json();
@@ -151,7 +151,7 @@ class CCCSystem {
     async _saveSettings() {
         var url = document.getElementById('ccc-stream-input')?.value || '';
         try {
-            await fetch('/api/ccc/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ stream_url: url }) });
+            await fetch(API_BASE + '/api/ccc/settings', { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ stream_url: url }) });
             showToast('Stream URL salvato', 'success');
         } catch(e) { showToast('Errore salvataggio', 'error'); }
     }
@@ -163,7 +163,7 @@ class CCCSystem {
         ], { confirmText:'Crea Edizione' });
         if (!data || !data.name.trim()) return;
         try {
-            var res = await fetch('/api/ccc/editions', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ name:data.name, description:data.description }) });
+            var res = await fetch(API_BASE + '/api/ccc/editions', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ name:data.name, description:data.description }) });
             if (res.ok) { showToast('Edizione creata!', 'success'); await this._showEditions(); }
             else { var d = await res.json(); showToast(d.error || 'Errore', 'error'); }
         } catch(e) { showToast('Errore creazione', 'error'); }
@@ -171,7 +171,7 @@ class CCCSystem {
 
     async _openEdition(id) {
         this.editionId = id;
-        var res = await fetch('/api/ccc/editions', { credentials:'include' });
+        var res = await fetch(API_BASE + '/api/ccc/editions', { credentials:'include' });
         var editions = await res.json();
         this.currentEdition = editions.find(function(e){ return e.id === id; });
         this._setBreadcrumb([
@@ -216,7 +216,7 @@ class CCCSystem {
     }
 
     async _renderFasi(el) {
-        var res = await fetch('/api/ccc/editions/' + this.editionId + '/phases', { credentials:'include' });
+        var res = await fetch(API_BASE + '/api/ccc/editions/' + this.editionId + '/phases', { credentials:'include' });
         var phases = await res.json();
         var h = '<div style="display:flex;gap:0.7rem;margin-bottom:1rem;">';
         h += '<button class="run-btn" onclick="window.cccSystem._addPhase()"><i class="fas fa-plus"></i> Aggiungi Fase</button></div>';
@@ -274,7 +274,7 @@ class CCCSystem {
 
 
     async _editPrizepool(phaseId) {
-        var res = await fetch('/api/ccc/phases/' + phaseId + '/prizepool', { credentials:'include' });
+        var res = await fetch(API_BASE + '/api/ccc/phases/' + phaseId + '/prizepool', { credentials:'include' });
         var entries = await res.json();
         var defaults = entries.length > 0 ? entries : [{position:1,prize:''},{position:2,prize:''},{position:3,prize:''}];
         var existing = document.getElementById('ccc-prizepool-modal');
@@ -316,7 +316,7 @@ class CCCSystem {
                 var pos = parseInt(inp.dataset.pos);
                 if (pos > 0) ent.push({ position: pos, prize: inp.value.trim() });
             });
-            fetch('/api/ccc/phases/' + phaseId + '/prizepool', { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ entries: ent }) })
+            fetch(API_BASE + '/api/ccc/phases/' + phaseId + '/prizepool', { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ entries: ent }) })
                 .then(function(r){ if(!r.ok) throw new Error(); showToast('Prizepool salvato!', 'success'); self._renderSubTab(); })
                 .catch(function(){ showToast('Errore salvataggio','error'); });
         }
@@ -342,7 +342,7 @@ class CCCSystem {
         var ok = await cccConfirm('Elimina Fase', 'Eliminando la fase verranno rimossi anche tutti i gruppi, match e risultati associati. Continuare?', true);
         if (!ok) return;
         try {
-            var res = await fetch('/api/ccc/phases/' + id, { method:'DELETE', credentials:'include' });
+            var res = await fetch(API_BASE + '/api/ccc/phases/' + id, { method:'DELETE', credentials:'include' });
             if (res.ok) { showToast('Fase eliminata', 'success'); await this._renderSubTab(); }
             else showToast('Errore eliminazione', 'error');
         } catch(e) { showToast('Errore','error'); }
@@ -352,7 +352,7 @@ class CCCSystem {
         var ok = await cccConfirm('Elimina Gruppo', 'Verranno eliminati anche tutti i match e risultati di questo girone. Continuare?', true);
         if (!ok) return;
         try {
-            var res = await fetch('/api/ccc/groups/' + id, { method:'DELETE', credentials:'include' });
+            var res = await fetch(API_BASE + '/api/ccc/groups/' + id, { method:'DELETE', credentials:'include' });
             if (res.ok) { showToast('Gruppo eliminato', 'success'); await this._renderSubTab(); }
             else showToast('Errore eliminazione', 'error');
         } catch(e) { showToast('Errore','error'); }
@@ -362,7 +362,7 @@ class CCCSystem {
         var ok = await cccConfirm('Elimina Match', 'Eliminare questo match e tutti i suoi risultati?', true);
         if (!ok) return;
         try {
-            var res = await fetch('/api/ccc/matches/' + id, { method:'DELETE', credentials:'include' });
+            var res = await fetch(API_BASE + '/api/ccc/matches/' + id, { method:'DELETE', credentials:'include' });
             if (res.ok) { showToast('Match eliminato', 'success'); await this._openGroup(groupId); }
             else showToast('Errore eliminazione', 'error');
         } catch(e) { showToast('Errore','error'); }
@@ -379,7 +379,7 @@ class CCCSystem {
         var gc = data.type === "finale" ? 1 : (parseInt(data.groups_count)||1);
         var body = { type:data.type, groups_count:gc, top_n:parseInt(data.top_n)||1, prizepool:data.prizepool };
         try {
-            var res = await fetch("/api/ccc/editions/" + this.editionId + "/phases", { method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify(body) });
+            var res = await fetch(API_BASE + "/api/ccc/editions/" + this.editionId + "/phases", { method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify(body) });
             if (res.ok) { showToast("Fase aggiunta!", "success"); this.subTab="fasi"; await this._renderSubTab(); }
             else { var d = await res.json(); showToast(d.error||"Errore","error"); }
         } catch(e) { showToast("Errore","error"); }
@@ -391,26 +391,26 @@ class CCCSystem {
         ], { confirmText:"Salva" });
         if (!data) return;
         try {
-            await fetch("/api/ccc/phases/" + id, { method:"PUT", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify({ top_n:parseInt(data.top_n)||1, prizepool:data.prizepool }) });
+            await fetch(API_BASE + "/api/ccc/phases/" + id, { method:"PUT", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify({ top_n:parseInt(data.top_n)||1, prizepool:data.prizepool }) });
             showToast("Fase aggiornata", "success"); await this._renderSubTab();
         } catch(e) { showToast("Errore","error"); }
     }
     async _togglePhase(id, active) {
         try {
-            await fetch("/api/ccc/phases/" + id, { method:"PUT", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify({ is_active: active }) });
+            await fetch(API_BASE + "/api/ccc/phases/" + id, { method:"PUT", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify({ is_active: active }) });
             showToast(active ? "Fase attivata" : "Fase disattivata", "success"); await this._renderSubTab();
         } catch(e) { showToast("Errore","error"); }
     }
     async _addGroup(phaseId) {
         try {
-            await fetch("/api/ccc/phases/" + phaseId + "/groups", { method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include", body:"{}" });
+            await fetch(API_BASE + "/api/ccc/phases/" + phaseId + "/groups", { method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include", body:"{}" });
             showToast("Gruppo aggiunto!", "success"); await this._renderSubTab();
         } catch(e) { showToast("Errore","error"); }
     }
     async _renderPlayers(el) {
         var [pRes, phRes] = await Promise.all([
-            fetch("/api/ccc/editions/" + this.editionId + "/players", { credentials:"include" }),
-            fetch("/api/ccc/editions/" + this.editionId + "/phases", { credentials:"include" })
+            fetch(API_BASE + "/api/ccc/editions/" + this.editionId + "/players", { credentials:"include" }),
+            fetch(API_BASE + "/api/ccc/editions/" + this.editionId + "/phases", { credentials:"include" })
         ]);
         var players = await pRes.json();
         var phases = await phRes.json();
@@ -468,7 +468,7 @@ class CCCSystem {
         var ok = await cccConfirm('Ricalcola Punti', 'Ricalcola i punti di tutti i match esistenti con le regole punteggio attuali. Sovrascrive i punti già salvati. Continuare?', false);
         if (!ok) return;
         try {
-            var res = await fetch('/api/ccc/editions/' + this.editionId + '/recalculate', { method:'POST', credentials:'include' });
+            var res = await fetch(API_BASE + '/api/ccc/editions/' + this.editionId + '/recalculate', { method:'POST', credentials:'include' });
             var data = await res.json();
             if (res.ok) showToast('Ricalcolati ' + data.updated + ' risultati!', 'success');
             else showToast('Errore ricalcolo', 'error');
@@ -481,7 +481,7 @@ class CCCSystem {
         ], { confirmText:'Importa' });
         if (!data || !data.text.trim()) return;
         try {
-            var res = await fetch('/api/ccc/editions/' + this.editionId + '/players/import', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ text:data.text }) });
+            var res = await fetch(API_BASE + '/api/ccc/editions/' + this.editionId + '/players/import', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ text:data.text }) });
             var d = await res.json();
             if (res.ok) { showToast('Importati ' + d.length + ' player!', 'success'); await this._renderSubTab(); }
             else showToast(d.error||'Errore', 'error');
@@ -491,24 +491,24 @@ class CCCSystem {
     async _assignGroup(event, playerId, phaseId) {
         var groupId = parseInt(event.target.value) || null;
         if (!groupId) {
-            try { await fetch('/api/ccc/phases/' + phaseId + '/players/' + playerId, { method:'DELETE', credentials:'include' }); }
+            try { await fetch(API_BASE + '/api/ccc/phases/' + phaseId + '/players/' + playerId, { method:'DELETE', credentials:'include' }); }
             catch(e) { showToast('Errore rimozione','error'); }
             return;
         }
         try {
-            await fetch('/api/ccc/groups/' + groupId + '/players', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ player_id: playerId }) });
+            await fetch(API_BASE + '/api/ccc/groups/' + groupId + '/players', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ player_id: playerId }) });
             showToast('Player assegnato!', 'success');
         } catch(e) { showToast('Errore assegnazione','error'); }
     }
 
     async _updatePlayerField(event, playerId, field) {
         var val = event.target.value; var body = {}; body[field] = val;
-        try { await fetch('/api/ccc/players/' + playerId, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(body) }); } catch(e) {}
+        try { await fetch(API_BASE + '/api/ccc/players/' + playerId, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify(body) }); } catch(e) {}
     }
 
     async _toggleDQ(playerId, current) {
         try {
-            await fetch('/api/ccc/players/' + playerId, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ is_disqualified: !current }) });
+            await fetch(API_BASE + '/api/ccc/players/' + playerId, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ is_disqualified: !current }) });
             showToast(!current ? 'Player squalificato' : 'Player riabilitato', 'success'); await this._renderSubTab();
         } catch(e) { showToast('Errore','error'); }
     }
@@ -517,13 +517,13 @@ class CCCSystem {
         var ok = await cccConfirm('Elimina Player', 'Sei sicuro? Questa azione e\' irreversibile.', true);
         if (!ok) return;
         try {
-            await fetch('/api/ccc/players/' + id, { method:'DELETE', credentials:'include' });
+            await fetch(API_BASE + '/api/ccc/players/' + id, { method:'DELETE', credentials:'include' });
             showToast('Player eliminato', 'success'); await this._renderSubTab();
         } catch(e) { showToast('Errore','error'); }
     }
 
     async _renderPunteggio(el) {
-        var res = await fetch('/api/ccc/editions/' + this.editionId + '/score-rules', { credentials:'include' });
+        var res = await fetch(API_BASE + '/api/ccc/editions/' + this.editionId + '/score-rules', { credentials:'include' });
         var data = await res.json();
         var base = data.base || { points_per_kill:1, points_per_win:5 };
         var positions = data.positions || [];
@@ -577,7 +577,7 @@ class CCCSystem {
             positions.push({ position:parseInt(inp.dataset.pos), points:parseFloat(inp.value)||0 });
         });
         try {
-            var res = await fetch('/api/ccc/editions/' + this.editionId + '/score-rules', { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ points_per_kill:kill, points_per_win:win, positions }) });
+            var res = await fetch(API_BASE + '/api/ccc/editions/' + this.editionId + '/score-rules', { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ points_per_kill:kill, points_per_win:win, positions }) });
             if (res.ok) showToast('Regole punteggio salvate!', 'success');
             else showToast('Errore salvataggio', 'error');
         } catch(e) { showToast('Errore','error'); }
@@ -585,7 +585,7 @@ class CCCSystem {
 
     async _openGroup(id) {
         this.groupId = id;
-        var res = await fetch('/api/ccc/groups/' + id, { credentials:'include' });
+        var res = await fetch(API_BASE + '/api/ccc/groups/' + id, { credentials:'include' });
         var group = await res.json();
         var phLabel = group.ccc_phases ? (group.ccc_phases.type==='girone'?'Girone':group.ccc_phases.type==='semifinale'?'Semifinale':'Finale') : 'Gruppo';
         this._setBreadcrumb([
@@ -649,7 +649,7 @@ class CCCSystem {
     }
 
     async _addMatch(groupId) {
-        var res = await fetch("/api/ccc/groups/" + groupId, { credentials:"include" });
+        var res = await fetch(API_BASE + "/api/ccc/groups/" + groupId, { credentials:"include" });
         var group = await res.json();
         var players = group.standings || [];
         if (players.length === 0) return showToast("Nessun player in questo gruppo","error");
@@ -685,13 +685,13 @@ class CCCSystem {
     }
     async _submitMatch(groupId, data, players) {
         try {
-            var postRes = await fetch("/api/ccc/groups/" + groupId + "/matches", { method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify({ name:data.matchName, notes:data.notes, played_at:data.playedAt||undefined, results:data.results }) });
+            var postRes = await fetch(API_BASE + "/api/ccc/groups/" + groupId + "/matches", { method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify({ name:data.matchName, notes:data.notes, played_at:data.playedAt||undefined, results:data.results }) });
             if (postRes.ok) { showToast("Match salvato!", "success"); await this._openGroup(groupId); }
             else { var d = await postRes.json(); showToast(d.error||"Errore","error"); }
         } catch(e) { showToast("Errore creazione match","error"); }
     }
     async _editMatch(matchId) {
-        var res = await fetch("/api/ccc/groups/" + this.groupId, { credentials:"include" });
+        var res = await fetch(API_BASE + "/api/ccc/groups/" + this.groupId, { credentials:"include" });
         var group = await res.json();
         var match = (group.matches||[]).find(function(m){ return m.id === matchId; });
         if (!match) return;
@@ -733,7 +733,7 @@ class CCCSystem {
                 var kills = parseInt(overlay.querySelector(".ccc-mi-kill[data-idx=\""+i+"\"]").value) || 0;
                 results.push({ player_id: r.player_id, position: pos, kills: kills });
             });
-            fetch("/api/ccc/matches/" + matchId, { method:"PUT", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify({ name:name, notes:notes, played_at:playedAt, results:results.length>0?results:undefined }) })
+            fetch(API_BASE + "/api/ccc/matches/" + matchId, { method:"PUT", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify({ name:name, notes:notes, played_at:playedAt, results:results.length>0?results:undefined }) })
                 .then(function(r){ if(!r.ok) throw new Error(); showToast("Match aggiornato", "success"); self._openGroup(self.groupId); })
                 .catch(function(){ showToast("Errore salvataggio","error"); });
         }
@@ -796,7 +796,7 @@ class CCCSystem {
     async _toggleActive() {
         var ed = this.currentEdition; var newVal = !ed.is_active;
         try {
-            await fetch('/api/ccc/editions/' + this.editionId, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ is_active: newVal }) });
+            await fetch(API_BASE + '/api/ccc/editions/' + this.editionId, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ is_active: newVal }) });
             showToast(newVal ? 'Edizione attivata!' : 'Edizione disattivata!', 'success');
             await this._openEdition(this.editionId);
         } catch(e) { showToast('Errore','error'); }
@@ -810,7 +810,7 @@ class CCCSystem {
         ], { confirmText:'Salva' });
         if (!data || !data.name.trim()) return;
         try {
-            await fetch('/api/ccc/editions/' + this.editionId, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ name:data.name, description:data.description }) });
+            await fetch(API_BASE + '/api/ccc/editions/' + this.editionId, { method:'PUT', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({ name:data.name, description:data.description }) });
             showToast('Edizione aggiornata', 'success'); await this._openEdition(this.editionId);
         } catch(e) { showToast('Errore','error'); }
     }
@@ -822,13 +822,13 @@ class CCCSystem {
             { id:"winner", label:"Nickname del vincitore", type:"text", placeholder:"Nickname..." }
         ], { confirmText:"Conferma" });
         if (!data) return;
-        var wRes = await fetch("/api/ccc/editions/" + this.editionId + "/players", { credentials:"include" });
+        var wRes = await fetch(API_BASE + "/api/ccc/editions/" + this.editionId + "/players", { credentials:"include" });
         var players = await wRes.json();
         var lw = (data.winner||"").toLowerCase();
         var wp = players.find(function(p){ return p.nickname.toLowerCase() === lw; });
         try {
             var body = { is_completed:true, is_active:false, winner_player_id: wp ? wp.id : null };
-            await fetch("/api/ccc/editions/" + this.editionId, { method:"PUT", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify(body) });
+            await fetch(API_BASE + "/api/ccc/editions/" + this.editionId, { method:"PUT", headers:{"Content-Type":"application/json"}, credentials:"include", body:JSON.stringify(body) });
             showToast("Edizione completata!", "success"); await this._showEditions();
         } catch(e) { showToast("Errore","error"); }
     }

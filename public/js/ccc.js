@@ -136,7 +136,7 @@
     }
     async function loadHistory() {
         try {
-            var res = await fetch('/api/ccc/history');
+            var res = await fetch(API_BASE + '/api/ccc/history');
             var history = await res.json();
             if (!history || history.length === 0) return '';
             var h = '<div class="ccc-section"><div class="ccc-section-title"><i class="fas fa-history"></i> Storico Edizioni</div>';
@@ -159,7 +159,7 @@
         if (_liveInterval) return;
         _liveInterval = setInterval(async function() {
             try {
-                var res = await fetch('/api/ccc/public');
+                var res = await fetch(API_BASE + '/api/ccc/public');
                 var d = await res.json();
                 if (!d.edition) { clearInterval(_liveInterval); _liveInterval = null; return; }
                 buildPlayerStats(d.phases || []);
@@ -177,7 +177,7 @@
 
     async function init() {
         try {
-            var res = await fetch('/api/ccc/public');
+            var res = await fetch(API_BASE + '/api/ccc/public');
             var data = await res.json();
             if (!data.edition) {
                 var isStaff = !!(window.authSystem && window.authSystem.isStaffLoggedIn()) ||

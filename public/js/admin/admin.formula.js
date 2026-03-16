@@ -133,7 +133,7 @@ class FormulaSystem {
 
     async load() {
         try {
-            const res = await fetch("/api/talents/formula");
+            const res = await fetch(API_BASE + "/api/talents/formula");
             if (res.ok) {
                 const data = await res.json();
                 this.customMeta = {};
@@ -194,7 +194,7 @@ class FormulaSystem {
                         weight: m.weight, normalization_enabled: m.normEnabled,
                         ui_config: m.uiConfig
                     };
-                    await fetch("/api/talents/formula", {
+                    await fetch(API_BASE + "/api/talents/formula", {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(row)
@@ -638,7 +638,7 @@ class FormulaSystem {
             ui_config: m.uiConfig
         };
         try {
-            const res = await fetch("/api/talents/formula", {
+            const res = await fetch(API_BASE + "/api/talents/formula", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(row)
@@ -1081,7 +1081,7 @@ class FormulaSystem {
     async fetchPreviewPlayers() {
         const sel = document.getElementById('fm-preview-player');
         if (!sel) return;
-        const res = await fetch("/api/talents/stats");
+        const res = await fetch(API_BASE + "/api/talents/stats");
         if (res.ok) {
             const data = await res.json();
             const players = data.players || [];
@@ -1157,7 +1157,7 @@ class ForceScanSystem {
         this.showStatus('Scansione avviata... potrebbe richiedere qualche minuto.', 'running');
 
         try {
-            const res = await fetch('/api/scraper/run', {
+            const res = await fetch(API_BASE + '/api/scraper/run', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ trigger: 'manual' })
@@ -1179,7 +1179,7 @@ class ForceScanSystem {
         if (this.pollInterval) clearInterval(this.pollInterval);
         this.pollInterval = setInterval(async () => {
             try {
-                const res = await fetch('/api/scraper/status');
+                const res = await fetch(API_BASE + '/api/scraper/status');
                 if (!res.ok) return;
                 const data = await res.json();
                 if (!data.isRunning) {

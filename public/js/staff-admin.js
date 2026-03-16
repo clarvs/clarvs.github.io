@@ -26,7 +26,7 @@
 
         try {
             // Cookie httpOnly inviato automaticamente (same-origin)
-            var res = await fetch('/api/auth/staff', {
+            var res = await fetch(API_BASE + '/api/auth/staff', {
                 credentials: 'include'
             });
             if (!res.ok) throw new Error('Errore ' + res.status);
@@ -70,7 +70,7 @@
         
         res_el.innerHTML = '<span style="color:rgba(255,255,255,0.5);"><i class="fas fa-spinner fa-spin"></i> Invio in corso...</span>';
         try {
-            var r = await fetch('/api/auth/invite', {
+            var r = await fetch(API_BASE + '/api/auth/invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -104,7 +104,7 @@
             if (rb) {
                 var id = rb.dataset.id, nick = rb.dataset.nick;
                 if (confirm('Revocare accesso a ' + nick + '?')) {
-                    fetch('/api/auth/staff/' + id, {
+                    fetch(API_BASE + '/api/auth/staff/' + id, {
                         method: 'DELETE',
                         credentials: 'include'
                     })
@@ -118,7 +118,7 @@
             if (cb) {
                 var id2 = cb.dataset.id, em = cb.dataset.email;
                 if (confirm('Annullare invito per ' + em + '?')) {
-                    fetch('/api/auth/invite/' + id2, {
+                    fetch(API_BASE + '/api/auth/invite/' + id2, {
                         method: 'DELETE',
                         credentials: 'include'
                     })

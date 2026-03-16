@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadInstagramPosts() {
         let permalinks = [];
         try {
-            const res = await fetch('/api/home-content');
+            const res = await fetch(API_BASE + '/api/home-content');
             if (res.ok) {
                 const content = await res.json();
                 const insta = content?.social?.instagram;
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadTwitterPosts() {
         let tweets = [];
         try {
-            const res = await fetch('/api/home-content');
+            const res = await fetch(API_BASE + '/api/home-content');
             if (res.ok) {
                 const content = await res.json();
                 const tw = content?.social?.twitter;

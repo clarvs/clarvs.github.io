@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Funzione per caricare i link dal database e popolare Header/Footer
 async function loadSiteLinks() {
     try {
-        const res = await fetch('/api/links');
+        const res = await fetch(API_BASE + '/api/links');
         if (!res.ok) throw new Error('Errore API');
         const links = await res.json();
         
@@ -261,7 +261,7 @@ window.addEventListener('resize', function() {
             setCccNav(true);
             return;
         }
-        fetch('/api/ccc/status')
+        fetch(API_BASE + '/api/ccc/status')
             .then(function(r) { return r.ok ? r.json() : { hasActive: false }; })
             .then(function(d) { setCccNav(!!(d && d.hasActive)); })
             .catch(function() { setCccNav(false); });

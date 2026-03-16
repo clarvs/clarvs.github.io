@@ -71,7 +71,7 @@ class ScoutingSystem {
         this._setStatus(this.singleStatus, '<i class="fas fa-spinner fa-spin"></i> Scrape in corso...', 'running');
 
         try {
-            const res = await fetch('/api/talents/lookup', {
+            const res = await fetch(API_BASE + '/api/talents/lookup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ profileUrl: url, save: true }) // Passiamo 'save: true' per indicare al server di aggiungerlo al pool
@@ -104,7 +104,7 @@ class ScoutingSystem {
 
     async loadUrls() {
         try {
-            const res = await fetch('/api/talents/urls');
+            const res = await fetch(API_BASE + '/api/talents/urls');
             if (res.ok) {
                 const data = await res.json();
                 this.configuredUrls = data.urls || [];
@@ -148,7 +148,7 @@ class ScoutingSystem {
     async loadTalentStats() {
         try {
             try {
-                const res = await fetch('/api/talents/stats');
+                const res = await fetch(API_BASE + '/api/talents/stats');
                 if (res.ok) {
                     this.talentData = await res.json();
                     
@@ -194,7 +194,7 @@ class ScoutingSystem {
             return;
         }
         try {
-            const res = await fetch('/api/talents/urls/add', {
+            const res = await fetch(API_BASE + '/api/talents/urls/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url })
@@ -214,7 +214,7 @@ class ScoutingSystem {
 
     async removeUrl(index) {
         try {
-            const res = await fetch('/api/talents/urls/remove', {
+            const res = await fetch(API_BASE + '/api/talents/urls/remove', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ index })
@@ -235,7 +235,7 @@ class ScoutingSystem {
             return;
         }
         try {
-            const res = await fetch('/api/talents/run', {
+            const res = await fetch(API_BASE + '/api/talents/run', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -255,7 +255,7 @@ class ScoutingSystem {
         if (this.pollInterval) clearInterval(this.pollInterval);
         const doPoll = async () => {
             try {
-                const res = await fetch('/api/talents/status');
+                const res = await fetch(API_BASE + '/api/talents/status');
                 if (!res.ok) return;
                 const status = await res.json();
 
@@ -445,7 +445,7 @@ class ScoutingSystem {
         this._setLookupStatus('<i class="fas fa-circle-notch fa-spin"></i> Scansione in corso... potrebbe richiedere 30Ã¨60 secondi.', 'running');
 
         try {
-            const res = await fetch('/api/talents/lookup', {
+            const res = await fetch(API_BASE + '/api/talents/lookup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ profileUrl: url })
@@ -636,7 +636,7 @@ class ScoutingSystem {
         this._setLookupStatus('<i class="fas fa-circle-notch fa-spin"></i> Scansione in corso... potrebbe richiedere 30Ã¨60 secondi.', 'running');
 
         try {
-            const res = await fetch('/api/talents/lookup', {
+            const res = await fetch(API_BASE + '/api/talents/lookup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ profileUrl: url })

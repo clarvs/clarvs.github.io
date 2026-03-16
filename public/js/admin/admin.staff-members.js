@@ -56,7 +56,7 @@ class StaffMemberSystem {
 
     async loadStaff() {
         try {
-            const res = await fetch('/api/staff');
+            const res = await fetch(API_BASE + '/api/staff');
             if (res.ok) { this.staff = await res.json(); this.serverAvailable = true; }
             else { this.serverAvailable = false; this.staff = []; }
         } catch (e) { this.serverAvailable = false; this.staff = []; }
@@ -177,7 +177,7 @@ class StaffMemberSystem {
         const confirmed = await this._showDeleteModal(s.name);
         if (!confirmed) return;
         try {
-            const res = await fetch('/api/staff/' + id, { method: 'DELETE' });
+            const res = await fetch(API_BASE + '/api/staff/' + id, { method: 'DELETE' });
             if (res.ok) {
                 if (window.showToast) window.showToast(s.name + ' eliminato', 'success');
                 await this.loadStaff();

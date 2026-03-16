@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const [rRes, sRes] = await Promise.all([
-                fetch('/api/roster'),
+                fetch(API_BASE + '/api/roster'),
                 fetch('/scraper/data/player-stats.json')
             ]);
             if (rRes.ok) roster = await rRes.json();

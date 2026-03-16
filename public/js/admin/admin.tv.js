@@ -20,7 +20,7 @@ class TVSystem {
         this.rosterStreamers = [];
         try {
             let data = null;
-            try { const r = await fetch('/api/roster'); if (r.ok) data = await r.json(); } catch { }
+            try { const r = await fetch(API_BASE + '/api/roster'); if (r.ok) data = await r.json(); } catch { }
             // Solo API
             if (!data) { /* fall through */ }
             if (!data) return;
@@ -46,7 +46,7 @@ class TVSystem {
     async loadManualStreamers() {
         this.streamers = [];
         try {
-            const res = await fetch('/api/tv/streamers');
+            const res = await fetch(API_BASE + '/api/tv/streamers');
             if (res.ok) { this.streamers = await res.json(); return; }
         } catch { /* server offline */ }
         try {
@@ -58,7 +58,7 @@ class TVSystem {
     async persistStreamers() {
         localStorage.setItem('clarvsTV_streamers', JSON.stringify(this.streamers));
         try {
-            await fetch('/api/tv/streamers', {
+            await fetch(API_BASE + '/api/tv/streamers', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.streamers)

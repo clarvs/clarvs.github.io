@@ -58,7 +58,7 @@ class RosterSystem {
 
     async loadRoster() {
         try {
-            const res = await fetch('/api/roster');
+            const res = await fetch(API_BASE + '/api/roster');
             if (res.ok) {
                 this.roster = await res.json();
                 this.serverAvailable = true;
@@ -249,7 +249,7 @@ class RosterSystem {
                     body: JSON.stringify(playerData)
                 });
             } else {
-                res = await fetch('/api/roster', {
+                res = await fetch(API_BASE + '/api/roster', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(playerData)

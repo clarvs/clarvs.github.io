@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         // 1. Roster automatico
         try {
             let data = null;
-            try { const r = await fetch('/api/roster');              if (r.ok) data = await r.json(); } catch {}
+            try { const r = await fetch(API_BASE + '/api/roster');              if (r.ok) data = await r.json(); } catch {}
             // Solo API
             if (!data) { /* fall through */ }
 
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // 2. Lista manuale
         let manual = [];
-        try { const r = await fetch('/api/tv/streamers'); if (r.ok) manual = await r.json(); } catch {}
+        try { const r = await fetch(API_BASE + '/api/tv/streamers'); if (r.ok) manual = await r.json(); } catch {}
         if (!manual.length) {
             try { const raw = localStorage.getItem('clarvsTV_streamers'); if (raw) manual = JSON.parse(raw); } catch {}
         }

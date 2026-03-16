@@ -13,7 +13,7 @@ class LinkSystem {
 
     async load() {
         try {
-            const res = await fetch('/api/links');
+            const res = await fetch(API_BASE + '/api/links');
             if (res.ok) {
                 this.links = await res.json();
                 this.render();
@@ -104,7 +104,7 @@ class LinkSystem {
         this.saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvataggio...';
 
         try {
-            const res = await fetch('/api/admin/links', {
+            const res = await fetch(API_BASE + '/api/admin/links', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

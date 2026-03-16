@@ -19,7 +19,7 @@ class HomeContentSystem {
 
     async loadContent() {
         try {
-            const res = await fetch('/api/home-content');
+            const res = await fetch(API_BASE + '/api/home-content');
             if (res.ok) {
                 this.content = await res.json();
                 this.serverAvailable = true;
@@ -316,7 +316,7 @@ class HomeContentSystem {
             return;
         }
         try {
-            const res = await fetch('/api/home-content', {
+            const res = await fetch(API_BASE + '/api/home-content', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(this.content)

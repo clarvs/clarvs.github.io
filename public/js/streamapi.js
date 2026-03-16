@@ -63,7 +63,7 @@ class StreamAPI {
      */
     async isBackendAvailable() {
         try {
-            const response = await fetch('/api/status');
+            const response = await fetch(API_BASE + '/api/status');
             return response.ok;
         } catch {
             return false;
@@ -75,7 +75,7 @@ class StreamAPI {
      */
     async checkLiveStreamsViaBackend() {
         try {
-            const response = await fetch('/api/check-live');
+            const response = await fetch(API_BASE + '/api/check-live');
             const data = await response.json();
             
             if (data.success) {
@@ -107,7 +107,7 @@ class StreamAPI {
             return [];
             
             // TODO: Implementare chiamata al backend
-            // const response = await fetch('/api/youtube/live');
+            // const response = await fetch(API_BASE + '/api/youtube/live');
             // const data = await response.json();
             // return data;
         } catch (error) {
@@ -131,7 +131,7 @@ class StreamAPI {
             return [];
             
             // TODO: Implementare chiamata al backend
-            // const response = await fetch('/api/twitch/live');
+            // const response = await fetch(API_BASE + '/api/twitch/live');
             // const data = await response.json();
             // return data;
         } catch (error) {

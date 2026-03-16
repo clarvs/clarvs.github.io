@@ -49,7 +49,7 @@
 
     async function loadState() {
         try {
-            var r = await fetch('/api/admin/maintenance');
+            var r = await fetch(API_BASE + '/api/admin/maintenance');
             if (!r.ok) throw new Error('HTTP ' + r.status);
             var d = await r.json();
             applyState(!!d.enabled, d.end_at, d.message, d.show_branding);
@@ -91,7 +91,7 @@
         if (saveBtn) saveBtn.disabled = true;
 
         try {
-            var r = await fetch('/api/admin/maintenance', {
+            var r = await fetch(API_BASE + '/api/admin/maintenance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
