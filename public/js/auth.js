@@ -30,7 +30,7 @@ class AuthSystem {
     async _checkSession() {
         try {
             // Il cookie httpOnly viene inviato automaticamente dal browser
-            const res = await fetch(API_BASE + '/api/auth/me');
+            const res = await fetch(API_BASE + '/api/auth/me', { credentials: 'include' });
             if (res.ok) {
                 const user = await res.json();
                 this.user = user;
@@ -44,7 +44,7 @@ class AuthSystem {
     }
     _interceptFetch() {
         var self = this, orig = window.fetch.bind(window);
-        window.fetch = function (url, opts) { opts = opts || {}; if (self.token && typeof url === 'string' && url.startsWith('/api/')) opts.headers = Object.assign({}, opts.headers, { 'Authorization': 'Bearer ' + self.token }); return orig(url, opts); };
+        window.fetch = function (url, opts) { opts = opts || {}; if (typeof url === 'string' && url.startsWith('https://clarvs-api.onrender.com')) { opts.credentials = 'include'; if (self.token) opts.headers = Object.assign({}, opts.headers, { 'Authorization': 'Bearer ' + self.token }); } return orig(url, opts); };
     }
     init() { this._createModals(); this._createButton(); this._updateUI(); this._bindEvents(); }
     _createButton() {
@@ -167,7 +167,7 @@ class AuthSystem {
         var btn = document.querySelector('#login-form button[type="submit"]');
         if (btn) { btn.disabled = true; btn.textContent = 'Accesso...'; }
         try {
-            var res = await fetch(API_BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: password }) });
+            var res = await fetch(API_BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: password }), credentials: 'include' });
             var data = await res.json();
             if (!res.ok) {
                 if (res.status === 401) this._clearSession();
@@ -194,7 +194,7 @@ class AuthSystem {
         if (!email) return;
         btn.disabled = true; btn.textContent = 'Invio...';
         try {
-            var rr = await fetch(API_BASE + '/api/auth/reset-password-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
+            var rr = await fetch(API_BASE + '/api/auth/reset-password-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }), credentials: 'include' });
             var rd = await rr.json();
             if (!rr.ok) { msg.innerHTML = '<span style="color:#ef4444;">' + (rd.error || 'Errore') + '</span>'; return; }
             msg.innerHTML = '<span style="color:#10b981;"><i class="fas fa-check-circle"></i> Email inviata! Controlla anche la cartella spam.</span>';
@@ -208,7 +208,7 @@ class AuthSystem {
         localStorage.removeItem('clarvs_token');
         localStorage.removeItem('clarvs_user');
         // Chiama il server per cancellare il cookie httpOnly
-        fetch(API_BASE + '/api/auth/logout', { method: 'POST' }).catch(() => {});
+        fetch(API_BASE + '/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
         this._closeAll(); this._updateUI(); this._showNotification('Logout eseguito');
     }
     _updateUI() {
