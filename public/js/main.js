@@ -1,3 +1,23 @@
+// Controllo manutenzione — eseguito subito prima di tutto il resto
+(function() {
+    var currentPage = window.location.pathname;
+    var isExempt = currentPage.includes('maintenance.html') || 
+                   currentPage.includes('admin.html') || 
+                   currentPage.includes('register.html') || 
+                   currentPage.includes('reset-password.html');
+    if (isExempt) return;
+
+    fetch(API_BASE + '/api/maintenance-status', { credentials: 'include' })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(d) {
+            if (!d || !d.enabled) return;
+            // Se è staff loggato, bypassa
+            try { if (JSON.parse(localStorage.getItem('clarvs_user'))) return; } catch(e) {}
+            window.location.href = '/maintenance.html';
+        })
+        .catch(function() {}); // Se Render è offline, non bloccare
+})();
+
 // Gestione generale del sito
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Main.js caricato correttamente');
