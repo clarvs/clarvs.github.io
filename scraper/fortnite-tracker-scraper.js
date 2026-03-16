@@ -1,4 +1,4 @@
-﻿/**
+/**
  * FORTNITE TRACKER WEB SCRAPER
  * Usa puppeteer-real-browser (stesso del talent scraper) per bypassare Cloudflare.
  * Il browser reale con turnstile:true risolve automaticamente i challenge.
@@ -83,7 +83,7 @@ class FortniteTrackerScraper {
 
         try {
             const results = [];
-            const batchSize = 10;
+            const batchSize = 1;
             const totalBatches = Math.ceil(this.players.length / batchSize);
 
             for (let i = 0; i < this.players.length; i += batchSize) {
