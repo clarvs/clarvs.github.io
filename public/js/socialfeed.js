@@ -126,5 +126,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
     loadInstagramPosts();
 });
-Posts();
-});
