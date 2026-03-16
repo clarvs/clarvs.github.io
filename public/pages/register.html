@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarvs - Registrazione Staff</title>
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/assets/images/favicon.ico" type="image/x-icon">
+    <style>
+        body { min-height:100vh; display:flex; align-items:center; justify-content:center; background:#0a0a0a; }
+        .reg-card { background:rgba(255,255,255,0.03); border:1px solid rgba(0,188,212,0.15); border-radius:16px; padding:2.5rem; width:100%; max-width:420px; margin:1rem; }
+        .reg-card h1 { font-size:1.5rem; margin-bottom:0.5rem; color:#fff; }
+        .sub { color:rgba(255,255,255,0.45); margin-bottom:2rem; font-size:0.9rem; }
+        .fg { margin-bottom:1.25rem; }
+        .fg label { display:block; margin-bottom:0.4rem; font-size:0.85rem; color:rgba(255,255,255,0.6); }
+        .fg input { width:100%; padding:0.75rem 1rem; background:rgba(0,0,0,0.3); border:1px solid rgba(0,188,212,0.2); border-radius:8px; color:#fff; font-size:0.95rem; box-sizing:border-box; }
+        .fg input:disabled { opacity:0.5; }
+        .fg input:focus { outline:none; border-color:rgba(0,188,212,0.5); }
+        .sbtn { width:100%; padding:0.85rem; background:linear-gradient(135deg,#00bcd4,#0097a7); border:none; border-radius:8px; color:#fff; font-size:1rem; font-weight:600; cursor:pointer; margin-top:0.5rem; }
+        .sbtn:disabled { opacity:0.5; cursor:not-allowed; }
+        .msg { margin-top:1rem; padding:0.75rem 1rem; border-radius:8px; font-size:0.9rem; display:none; }
+        .msg.err { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#ef4444; }
+        .msg.ok  { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#10b981; }
+        .logo-row { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; }
+        .logo-row img { height:36px; }
+        .logo-row span { font-size:1.1rem; font-weight:700; color:#fff; }
+    </style>
+</head>
+<body>
+<div class="reg-card">
+    <div class="logo-row"><img src="/assets/images/logo.png" alt="Clarvs"><span>CLARVS</span></div>
+    <h1><i class="fas fa-user-plus" style="color:#00bcd4;"></i> Registrazione Staff</h1>
+    <p class="sub">Completa la registrazione per accedere al pannello admin.</p>
+
+    <div id="load-msg" style="color:rgba(255,255,255,0.5);text-align:center;padding:1.5rem 0;">
+        <i class="fas fa-spinner fa-spin"></i> Verifica invito...
+    </div>
+
+    <form id="reg-form" style="display:none;">
+        <div class="fg">
+            <label for="r-email">Email (dall'invito)</label>
+            <input type="email" id="r-email" disabled>
+        </div>
+        <div class="fg">
+            <label for="r-nick">Nickname *</label>
+            <input type="text" id="r-nick" placeholder="3-20 caratteri" minlength="3" maxlength="20" required>
+        </div>
+        <div class="fg">
+            <label for="r-pw">Password *</label>
+            <input type="password" id="r-pw" placeholder="Minimo 8 caratteri" minlength="8" required>
+        </div>
+        <div class="fg">
+            <label for="r-pw2">Conferma Password *</label>
+            <input type="password" id="r-pw2" placeholder="Ripeti la password" required>
+        </div>
+        <button type="submit" class="sbtn"><i class="fas fa-check"></i> Crea Account</button>
+    </form>
+
+    <div id="err-msg" class="msg err"></div>
+    <div id="ok-msg"  class="msg ok"></div>
+</div>
+<script>
+(function() {
+    // Supabase invia il token nell'URL hash dopo il click sul link di invito
+    // Formato: /register.html#access_token=xxx&type=invite
+    var hash   = window.location.hash.slice(1);
+    var params = {};
+    hash.split('&').forEach(function(p) { var i=p.indexOf('='); if(i>-1) params[p.slice(0,i)]=decodeURIComponent(p.slice(i+1)); });
+
+    var token  = params['access_token'];
+    var type   = params['type'];    // deve essere 'invite'
+
+    var loadEl = document.getElementById('load-msg');
+    var formEl = document.getElementById('reg-form');
+    var errEl  = document.getElementById('err-msg');
+    var okEl   = document.getElementById('ok-msg');
+
+    function showErr(msg) {
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+    }
+
+    if (!token || type !== 'invite') {
+        loadEl.innerHTML = '<span style="color:#ef4444;"><i class="fas fa-times-circle"></i> Link non valido. Richiedi un nuovo invito al tuo owner.</span>';
+        return;
+    }
+
+    // Verifica il token con il server e ottieni l'email associata
+    fetch('/api/auth/invite-info?token=' + encodeURIComponent(token))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.error) {
+                loadEl.innerHTML = '<span style="color:#ef4444;"><i class="fas fa-times-circle"></i> ' + d.error + '</span>';
+                return;
+            }
+            loadEl.style.display = 'none';
+            document.getElementById('r-email').value = d.email;
+            formEl.style.display = 'block';
+        })
+        .catch(function() {
+            loadEl.innerHTML = '<span style="color:#ef4444;">Errore di connessione al server.</span>';
+        });
+
+    formEl.addEventListener('submit', function(e) {
+        e.preventDefault();
+        errEl.style.display = 'none';
+
+        var nick = document.getElementById('r-nick').value.trim();
+        var pw   = document.getElementById('r-pw').value;
+        var pw2  = document.getElementById('r-pw2').value;
+
+        if (pw !== pw2) { showErr('Le password non coincidono.'); return; }
+
+        var btn = formEl.querySelector('.sbtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrazione...';
+
+        fetch('/api/auth/complete-registration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token, nickname: nick, password: pw })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.error) {
+                showErr(d.error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Crea Account';
+                return;
+            }
+            formEl.style.display = 'none';
+            okEl.innerHTML = '<i class="fas fa-check-circle"></i> Account creato con successo! Ora puoi <a href="/index.html" style="color:#10b981;text-decoration:underline;">tornare alla home</a> e fare login.';
+            okEl.style.display = 'block';
+        })
+        .catch(function() {
+            showErr('Errore di connessione.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Crea Account';
+        });
+    });
+})();
+</script>
+</body>
+</html>
