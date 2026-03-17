@@ -1007,8 +1007,19 @@
 
 /* Home tab: assicura che le sezioni non escano dai loro slot nella griglia inline */
 #tab-home .section-box {
-    min-width: 0; /* evita overflow nella griglia */
+    min-width: 0;
     overflow: hidden;
+}
+
+/* Home tab: le tabelle News/Eventi scrollano orizzontalmente se lo spazio è insufficiente */
+#tab-home .section-box .roster-admin-table {
+    min-width: 380px;
+}
+#tab-home .section-box > .roster-table-wrapper,
+#tab-home .section-box table {
+    overflow-x: auto;
+    display: block;
+    width: 100%;
 }
 
 /* Tabella News: layout fisso per evitare il wrapping della colonna Titolo */
@@ -1063,7 +1074,7 @@ table:has(#events-tbody) td:nth-child(5) { width: 17%; text-align: right; }
     min-height: 1.5rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
     #tab-home > div:first-child {
         grid-template-columns: 1fr;
     }
