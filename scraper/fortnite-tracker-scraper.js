@@ -83,7 +83,7 @@ class FortniteTrackerScraper {
 
         try {
             const results = [];
-            const batchSize = 1;
+            const batchSize = 10;
             const totalBatches = Math.ceil(this.players.length / batchSize);
 
             for (let i = 0; i < this.players.length; i += batchSize) {
@@ -494,7 +494,8 @@ class FortniteTrackerScraper {
     }
 
     log(message) {
-        // logging disabilitato
+        const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        console.log(`[Scraper ${ts}] ${message}`);
     }
 
     getStatus() {
