@@ -1,8 +1,9 @@
-﻿'use strict';
+'use strict';
 require('dotenv').config();
-// ÔöÇÔöÇ Windows fs.rmSync patch + uncaughtException handler ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- Windows fs.rmSync patch + uncaughtException handler --
 // Patch fs.rmSync: intercetta EPERM su dir temp di chrome-launcher (lighthouse.*)
-// prima che la libreria le stampi nel log ÔÇö errore non fatale su Windows.
+// prima che la libreria le stampi nel log — errore non fatale su Windows.
 {
     const _origRm = require('fs').rmSync;
     require('fs').rmSync = function (p, opts) {
@@ -22,6 +23,7 @@ process.on('uncaughtException', (err) => {
     console.error('[uncaughtException]', err);
     process.exit(1);
 });
+
 const express      = require('express');
 const http         = require('http');
 const cors         = require('cors');
@@ -29,12 +31,15 @@ const cookieParser = require('cookie-parser');
 const path         = require('path');
 const socketIo     = require('socket.io');
 const rateLimit    = require('express-rate-limit');
+
 // Config & middleware
 const { maintenanceMiddleware } = require('./src/middleware/maintenance');
 const { initChatSocket }        = require('./src/socket/chat.socket');
+
 const PORT           = process.env.PORT || 3000;
 const ALLOWED_ORIGIN = process.env.APP_URL || 'http://localhost:3000';
-// ÔöÇÔöÇ Rate limiters ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- Rate limiters --
 // Rate limiter globale: 100 richieste/minuto per IP
 const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -48,6 +53,7 @@ const globalLimiter = rateLimit({
         return ["css","js","png","jpg","jpeg","gif","svg","ico","woff","woff2","ttf","eot","webp","mp4","webm"].includes(ext);
     },
 });
+
 // Rate limiter scraper: 5 richieste/ora per IP
 // Applicato su /api/talents/lookup (scraping singolo profilo) e /api/talents/run (scraping batch)
 const scraperLimiter = rateLimit({
@@ -57,7 +63,8 @@ const scraperLimiter = rateLimit({
     legacyHeaders: false,
     message: { error: 'Limite scraper raggiunto, riprova tra un ora' },
 });
-// ÔöÇÔöÇ App setup ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- App setup --
 const app    = express();
 const server = http.createServer(app);
 const io     = socketIo(server, {
@@ -67,14 +74,17 @@ const io     = socketIo(server, {
         credentials: true
     }
 });
-// ÔöÇÔöÇ Core middleware ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- Core middleware --
+app.set('trust proxy', 1); // Render (e altri cloud) usano un proxy — necessario per express-rate-limit
 app.use(globalLimiter);
 app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use(maintenanceMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
-// ÔöÇÔöÇ API Routes ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- API Routes --
 app.use('/api', require('./src/api/v1/auth.routes'));
 app.use('/api/roster', require('./src/api/v1/roster.routes'));
 app.use('/api/staff',  require('./src/api/v1/staff.routes'));
@@ -86,22 +96,27 @@ app.use('/api/talents/run', scraperLimiter);
 app.use('/api/talents', require('./src/api/v1/talents.routes'));
 app.use('/api/tv', require('./src/api/v1/tv.routes'));
 app.use('/api/ccc', require('./src/api/v1/ccc.routes'));
-// ÔöÇÔöÇ Socket.io ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- Socket.io --
 initChatSocket(io);
-// ÔöÇÔöÇ Catch-all ÔåÆ SPA index ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- Catch-all -> SPA index --
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-// ÔöÇÔöÇ Global error handler ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- Global error handler --
 app.use((err, req, res, next) => {
     console.error('[ERROR]', err.stack || err.message || err);
     res.status(err.status || 500).json({ error: err.message || 'Errore interno del server.' });
 });
-// ÔöÇÔöÇ Start ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- Start --
 server.listen(PORT, () => {
     console.log(`[Clarvs] Server avviato su porta ${PORT}`);
 });
-// ÔöÇÔöÇÔöÇ Graceful Shutdown ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+// -- Graceful Shutdown --
 const shutdown = async (signal) => {
   console.log('[Clarvs] Ricevuto segnale ' + signal + ', avvio graceful shutdown...');
   // 1. Smetti di accettare nuove connessioni HTTP
@@ -116,9 +131,10 @@ const shutdown = async (signal) => {
   });
   // Timeout di sicurezza: forza exit dopo 30s se qualcosa si blocca
   setTimeout(() => {
-    console.error('[Clarvs] Shutdown timeout ÔÇö forzo exit');
+    console.error('[Clarvs] Shutdown timeout — forzo exit');
     process.exit(1);
   }, 30_000);
 };
+
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT',  () => shutdown('SIGINT'));
