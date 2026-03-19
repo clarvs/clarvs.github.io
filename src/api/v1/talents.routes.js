@@ -15,7 +15,7 @@ const { connect } = require('puppeteer-real-browser');
 const cron = require('node-cron');
 const fs = require('fs').promises;
 const path = require('path');
-const { supabase } = require('../supabase');
+const { supabase } = require('../../../supabase');
 
 // Mutex in-process: previene esecuzioni concorrenti anche su eccezione
 let _scraperLock = false;
