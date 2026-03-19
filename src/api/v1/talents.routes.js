@@ -3,15 +3,17 @@
  * Scrapa classifiche Fortnite Tracker per trovare talenti.
  *
  * Per ogni player dalla classifica estrae:
- *   - Nome      â†’ #profile-header .profile-header-user__nickname
- *   - PR EU     â†’ .profile-events-totals__value (label "Power Ranking")
- *   - Earnings  â†’ .profile-table-row__value (contiene $)
- *   - Media placement â†’ ultimi 10 tornei con PR > 1
+ *   - Nome      → #profile-header .profile-header-user__nickname
+ *   - PR EU     → .profile-events-totals__value (label "Power Ranking")
+ *   - Earnings  → .profile-table-row__value (contiene $)
+ *   - Media placement → ultimi 10 tornei con PR > 1
  *
  * Profili scrapati in parallelo (CONCURRENCY = 10 browser indipendenti)
  */
 
-const { connect } = require('puppeteer-real-browser');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 const cron = require('node-cron');
 const fs = require('fs').promises;
 const path = require('path');
@@ -28,11 +30,9 @@ const CONCURRENCY = parseInt(process.env.SCRAPER_CONCURRENCY) || 10;
 
 
 // Workaround Windows: chrome-launcher tenta di eliminare la dir temp (lighthouse.XXXXXXXX)
-// con rmSync mentre Chrome ha ancora file handle aperti â†’ EPERM non-fatale.
-// Intercettiamo solo questo caso specifico per non sporcare i log.
+// con rmSync mentre Chrome ha ancora file handle aperti → EPERM non-fatale.
 process.on('uncaughtException', err => {
     if (err.code === 'EPERM' && err.path && err.path.includes('lighthouse')) {
-        // Errore non-fatale: cleanup dir temp Chrome su Windows â€” ignorato
         return;
     }
     throw err;
@@ -43,7 +43,7 @@ class TalentScraper {
         this.browser = null;
         this.page = null;
         this.isRunning = false;
-        this.recentLogs = []; // Telemetria in-memory (ultimi 50 log)
+        this.recentLogs = [];
         this.progressDone = 0;
         this.progressTotal = 0;
         this.currentPhase = '';
@@ -58,7 +58,6 @@ class TalentScraper {
         this.setupDirectories();
 
         if (options.enableScheduling !== false) {
-            // Avvio automatico alle 01:30 (dopo il team scraper delle 01:00)
             cron.schedule('30 1 * * *', () => {
                 this.log('[01:30] Avvio talent scraping pianificato');
                 this.runScraping();
@@ -75,7 +74,7 @@ class TalentScraper {
         }
     }
 
-    // â”€â”€â”€ CONFIG URLs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── CONFIG URLs ──────────────────────────────────────────────────────────
 
     async getUrls() {
         try {
@@ -89,7 +88,7 @@ class TalentScraper {
             await supabase.from('talent_urls').insert(urls.map(function (u) { return { url: u }; }));
     }
 
-    // â”€â”€â”€ STATS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── STATS ────────────────────────────────────────────────────────────────
 
     async getLatestStats() {
         try {
@@ -150,8 +149,6 @@ class TalentScraper {
                 last_scraped: new Date().toISOString()
             }));
 
-            // Deduplicazione per nome: previene 'ON CONFLICT DO UPDATE command cannot affect row a second time'
-            // Causa: stesso giocatore con casing diverso da URL multipli (es. 'PlayerX' vs 'playerx')
             const seenNames = new Set();
             const uniqueRecords = records.filter(r => {
                 const key = r.name.toLowerCase();
@@ -182,7 +179,7 @@ class TalentScraper {
             if (toDelete.length > 0) {
                 const { error: delErr } = await supabase.from('talent_stats').delete().in('name', toDelete);
                 if (delErr) this.log(`WARN cleanup vecchi player: ${delErr.message}`);
-                else this.log(`saveData: eliminati ${toDelete.length} player non piÃ¹ in classifica`);
+                else this.log(`saveData: eliminati ${toDelete.length} player non più in classifica`);
             }
 
             const { error: metaErr } = await supabase.from('scraper_meta').upsert({
@@ -192,13 +189,13 @@ class TalentScraper {
             }, { onConflict: 'key' });
             if (metaErr) throw metaErr;
 
-            this.log(`saveData: completato â€” ${records.length} player salvati`);
+            this.log(`saveData: completato — ${records.length} player salvati`);
         } catch (e) {
             this.log('Errore saveData: ' + e.message);
         }
     }
 
-    // --- FORMULA CONFIG (carica da Supabase, fallback ai defaults) ---
+    // --- FORMULA CONFIG ---
 
     async getFormulaConfig() {
         const config = {};
@@ -223,14 +220,14 @@ class TalentScraper {
 
     evalExpr(expr, context) {
         try {
-            // Normalize Math.xxx() calls to bare function names (expr-eval has math built-ins)
             const normalized = expr.replace(/Math./g, '');
             return exprParser.evaluate(normalized, context);
         } catch (err) {
             throw new Error("Errore formula: " + err.message);
         }
     }
-    // â”€â”€â”€ MAIN FLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    // ─── MAIN FLOW ────────────────────────────────────────────────────────────
 
     async runScraping() {
         if (_scraperLock) {
@@ -248,11 +245,9 @@ class TalentScraper {
             _scraperLock = false;
             return;
         }
-        this.log(`Avvio talent scraping â€” ${urls.length} classifiche da processare`);
+        this.log(`Avvio talent scraping — ${urls.length} classifiche da processare`);
 
         try {
-            // Step 1: raccogli player dalle classifiche (browser singolo, sequenziale)
-            // Un unico browser processa tutti gli URL in serie
             await this.initLeaderboardBrowser();
 
             const allPlayerLinks = [];
@@ -260,7 +255,6 @@ class TalentScraper {
 
             for (let _ui = 0; _ui < urls.length; _ui++) {
                 const url = urls[_ui];
-                // Reset pagina tra un URL e l'altro per evitare problemi di stato/Cloudflare
                 if (_ui > 0) {
                     await this.page.goto('about:blank', { waitUntil: 'load', timeout: 10000 }).catch(() => { });
                 }
@@ -277,7 +271,7 @@ class TalentScraper {
                         }
                     }
                     const dupCount = players.length - newCount;
-                    this.log(`Trovati ${players.length} player in: ${url} â†’ ${newCount} nuovi${dupCount > 0 ? `, ${dupCount} giÃ  visti (scartati)` : ''}`);
+                    this.log(`Trovati ${players.length} player in: ${url} → ${newCount} nuovi${dupCount > 0 ? `, ${dupCount} già visti (scartati)` : ''}`);
                 } catch (e) {
                     this.log(`Errore classifica ${url}: ${e.message}`);
                 }
@@ -285,11 +279,9 @@ class TalentScraper {
 
             await this.closeBrowser();
 
-            // Step 2: la deduplicazione Ã¨ giÃ  avvenuta inline
             const uniquePlayers = allPlayerLinks;
             this.log(`Player unici da profilare: ${uniquePlayers.length}`);
 
-            // Step 3: scrapa profili in parallelo (batch da CONCURRENCY)
             const detailedPlayers = [];
             const totalBatches = Math.ceil(uniquePlayers.length / CONCURRENCY);
             this.progressDone = 0;
@@ -313,7 +305,6 @@ class TalentScraper {
                 }
             }
 
-            // Filtra player inattivi (ultimo evento > 40 giorni fa)
             const activePlayers = detailedPlayers.filter(p => !p.inactive);
             if (activePlayers.length < detailedPlayers.length) {
                 this.log(`Esclusi ${detailedPlayers.length - activePlayers.length} player inattivi (ultimo evento > 40 giorni fa)`);
@@ -322,7 +313,6 @@ class TalentScraper {
             detailedPlayers.push(...activePlayers);
 
             this.currentPhase = 'Calcolo Talent Score';
-            // Step 4: calcola Talent Score sul pool e ordina desc
             const scoredPlayers = await this.computeTalentScores(detailedPlayers);
             scoredPlayers.sort((a, b) => {
                 if (a.talentScore === null && b.talentScore === null) return 0;
@@ -334,7 +324,6 @@ class TalentScraper {
             detailedPlayers.push(...scoredPlayers);
 
             this.currentPhase = 'Salvataggio dati';
-            // Step 5: salva
             await this.saveData({
                 lastUpdate: new Date().toISOString(),
                 sourceUrls: urls,
@@ -352,26 +341,24 @@ class TalentScraper {
         }
     }
 
-    // â”€â”€â”€ SCRAPE LEADERBOARD (browser dedicato per URL) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── SCRAPE LEADERBOARD (browser dedicato per URL) ────────────────────────
 
     async scrapeLeaderboardWithOwnBrowser(url) {
         let browser = null;
         try {
-            const result = await connect({
+            browser = await puppeteer.launch({
                 headless: true,
+                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
+                    '--disable-gpu',
                     '--lang=it-IT,it,en-US,en',
                     '--window-size=1920,1080',
-                    '--window-position=-32000,-32000'
-                ],
-                turnstile: true,
-                connectOption: { defaultViewport: this.config.viewport },
-                disableXvfb: true
+                ]
             });
-            browser = result.browser;
-            const page = result.page;
+            const page = await browser.newPage();
+            await page.setViewport(this.config.viewport);
             await page.setUserAgent(this.config.userAgent);
             return await this.scrapeLeaderboard(url, page);
         } finally {
@@ -419,7 +406,6 @@ class TalentScraper {
 
             if (results.length > 0) return results;
 
-            // Fallback
             const fallbackLinks = document.querySelectorAll('a[href*="/profile/"]');
             fallbackLinks.forEach(a => {
                 const href = a.getAttribute('href');
@@ -440,59 +426,55 @@ class TalentScraper {
         return players;
     }
 
-    // â”€â”€â”€ SCRAPE SINGOLO PROFILO (browser dedicato) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── SCRAPE SINGOLO PROFILO (browser dedicato) ────────────────────────────
 
     async scrapePlayerWithOwnBrowser(player) {
         let browser = null;
         try {
-            const result = await connect({
+            browser = await puppeteer.launch({
                 headless: true,
+                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
+                    '--disable-gpu',
                     '--lang=it-IT,it,en-US,en',
                     '--window-size=1920,1080',
-                    '--window-position=-32000,-32000'
-                ],
-                turnstile: true,
-                connectOption: { defaultViewport: this.config.viewport },
-                disableXvfb: true
+                ]
             });
-
-            browser = result.browser;
-            const page = result.page;
+            const page = await browser.newPage();
+            await page.setViewport(this.config.viewport);
             await page.setUserAgent(this.config.userAgent);
 
             const details = await this.scrapePlayerProfile(player, page);
 
-            // Controllo inattivitÃ : escludi se l'ultimo evento Ã¨ > 40 giorni fa
             if (!details.lastEventDate) {
-                this.log(`WARN ${details.name} â€” lastEventDate non trovata, player non escluso per inattivitÃ `);
+                this.log(`WARN ${details.name} — lastEventDate non trovata, player non escluso per inattività`);
             } else {
                 const lastDate = new Date(details.lastEventDate);
                 if (isNaN(lastDate.getTime())) {
-                    this.log(`WARN ${details.name} â€” data non parsabile: "${details.lastEventDate}", player non escluso per inattivitÃ `);
+                    this.log(`WARN ${details.name} — data non parsabile: "${details.lastEventDate}", player non escluso per inattività`);
                 } else {
                     const now = Date.now();
                     const daysSince = (now - lastDate.getTime()) / (1000 * 60 * 60 * 24);
                     if (daysSince > 40) {
-                        this.log(`ESCLUSO (inattivo) ${details.name} â€” ultimo evento: ${details.lastEventDate} (${Math.round(daysSince)} giorni fa)`);
+                        this.log(`ESCLUSO (inattivo) ${details.name} — ultimo evento: ${details.lastEventDate} (${Math.round(daysSince)} giorni fa)`);
                         return { ...details, inactive: true };
                     }
                 }
             }
 
-            this.log(`OK ${details.name} â€” PR: ${details.pr ?? 'N/A'} (Recent10: ${details.prRecent10} from ${details.prRecent10SampleSize} events) | Earnings: $${details.earnings} | Tornei: ${details.top10Tournaments.length} | Con PR: ${details.top10Tournaments.filter(t => t.prEarned > 0).length} | Eventi totali: ${details.eventsTotal ?? 0}`);
+            this.log(`OK ${details.name} — PR: ${details.pr ?? 'N/A'} (Recent10: ${details.prRecent10} from ${details.prRecent10SampleSize} events) | Earnings: $${details.earnings} | Tornei: ${details.top10Tournaments.length} | Con PR: ${details.top10Tournaments.filter(t => t.prEarned > 0).length} | Eventi totali: ${details.eventsTotal ?? 0}`);
             if (details.top10Tournaments.length > 0) {
                 details.top10Tournaments.forEach((t, i) => {
-                    this.log(`   [${i + 1}] ${t.name} â†’ #${t.placement} (PR: ${t.prEarned})`);
+                    this.log(`   [${i + 1}] ${t.name} → #${t.placement} (PR: ${t.prEarned})`);
                 });
             }
 
             return details;
 
         } catch (e) {
-            this.log(`ESCLUSO (errore scraping) ${player.name} â€” ${e.message}`);
+            this.log(`ESCLUSO (errore scraping) ${player.name} — ${e.message}`);
             return {
                 name: player.name,
                 profileUrl: player.profileUrl,
@@ -509,7 +491,7 @@ class TalentScraper {
         }
     }
 
-    // â”€â”€â”€ SCRAPE PLAYER PROFILE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── SCRAPE PLAYER PROFILE ────────────────────────────────────────────────
 
     async scrapePlayerProfile(player, page) {
         await page.goto(player.profileUrl, {
@@ -538,11 +520,9 @@ class TalentScraper {
         const stats = await page.evaluate(() => {
             const data = { name: null, pr: null, earnings: 0, tournaments: [], eventsTotal: 0 };
 
-            // â”€â”€ NOME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const nameEl = document.querySelector('#profile-header .profile-header-user__nickname');
             if (nameEl) data.name = nameEl.textContent.trim();
 
-            // â”€â”€ PR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const totalsItems = document.querySelectorAll(
                 '.profile-events-totals__item, .profile-events-totals > div, .profile-events-totals > *'
             );
@@ -564,7 +544,6 @@ class TalentScraper {
                 });
             }
 
-            // â”€â”€ EARNINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             document.querySelectorAll('.profile-table-row__value').forEach(el => {
                 const text = el.textContent.trim();
                 if (text.startsWith('$')) {
@@ -573,19 +552,15 @@ class TalentScraper {
                 }
             });
 
-            // â”€â”€ TOTAL EVENTS (tournament count) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             try {
-                // Usa direttamente il valore con title dentro profile-stat-delta__container,
-                // es: <div class="profile-stat-delta__container"><div class="profile-stat__value" title="129">129</div>...</div>
                 const v = document.querySelector('.profile-stat-delta__container .profile-stat__value[title]');
                 if (v) {
                     const raw = v.getAttribute('title') || v.textContent;
                     const num = parseInt((raw || '').trim().replace(/[,.\s]/g, ''));
                     if (!isNaN(num)) data.eventsTotal = num;
                 }
-            } catch (_) { /* ignore DOM issues */ }
+            } catch (_) { }
 
-            // â”€â”€ TORNEI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const allTournaments = [];
             document.querySelectorAll('tr.profile-event-row').forEach(row => {
                 const pointsEl = row.querySelector('div.profile-event-row__points');
@@ -609,9 +584,7 @@ class TalentScraper {
                 allTournaments.push({ name: tourName, placement, prEarned });
             });
             data.tournaments = allTournaments.slice(0, 10);
-            
-            // â”€â”€ PR RECENT 10 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            // Sum of PR earned in the last 10 tracked tournaments (already filtered)
+
             data.prRecent10 = data.tournaments.reduce((sum, t) => sum + (t.prEarned || 0), 0);
             data.prRecent10SampleSize = data.tournaments.length;
             const _placements10 = data.tournaments.map(t => t.placement || 0).filter(p => p > 0);
@@ -619,7 +592,6 @@ class TalentScraper {
                 ? Math.floor(_placements10.reduce((a, b) => a + b, 0) / _placements10.length)
                 : 0;
 
-            // â”€â”€ AVG TOP (media top generale, primo valore float nei profile-stat) â”€â”€
             data.avgTop = null;
             const allStatVals = document.querySelectorAll('.profile-stat__value[title]');
             for (const el of allStatVals) {
@@ -630,8 +602,6 @@ class TalentScraper {
                 }
             }
 
-            // â”€â”€ LAST EVENT DATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            // Cerca il primo elemento che corrisponde a un pattern data (es. "May 13, 2025")
             const datePatterns = [
                 /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{1,2},\s+\d{4}$/i,
                 /^\d{1,2}\/\d{1,2}\/\d{4}$/,
@@ -684,15 +654,12 @@ class TalentScraper {
             return players.map(p => ({ ...p, talentScore: null, talentMetrics: null, eligible: false }));
         }
 
-        // Separa chiavi per fase
         const phase1Keys = Object.keys(formulaConfig).filter(k => formulaConfig[k].phase === 1);
         const phase2Keys = Object.keys(formulaConfig).filter(k => formulaConfig[k].phase === 2);
         const scoreKey = "SCORE";
 
         const metricsPool = eligible.map(p => ({ player: p, results: {} }));
 
-        // --- RANK BASE CALCOLATI UPFRONT (prima delle formule) ---
-        // RANK CONVENTION: Inverse rank. 1 = BEST player in pool.
         const N = eligible.length;
         const calcPercentile = (rank, total) => total <= 1 ? 1.0 : 1.0 - ((rank - 1) / (total - 1));
 
@@ -709,7 +676,6 @@ class TalentScraper {
             .sort((a, b) => b.val - a.val)
             .forEach((d, i) => prDensityRankMap.set(d.name, i + 1));
 
-        // --- UNICO PASS FORMULA (contesto completo: grezze + contestuali) ---
         const allFormulaKeys = [...phase1Keys, ...phase2Keys];
         metricsPool.forEach(m => {
             const p = m.player;
@@ -750,9 +716,6 @@ class TalentScraper {
             m.results.rank_delta_raw = rankDeltaRaw;
         });
 
-        // --- PHASE 0: SCORE ---
-        // Talent Score: media diretta dei valori raw delle metriche attive, clampati 0â€“1.
-        // Ogni formula deve produrre un valore in range 0â€“1 by design.
         const customMetricKeys = Object.keys(formulaConfig).filter(k => {
             if (k === scoreKey) return false;
             const cfg = formulaConfig[k];
@@ -782,8 +745,6 @@ class TalentScraper {
         const scoreMap = {};
         metricsPool.forEach(m => {
             const finalMetrics = {};
-            // Includi nel talentMetrics SOLO le metriche che hanno una riga in talent_formula_config (fromDb=true) e sono attive
-            // Esclusi: SCORE, varianti _n e helper tecnici interni.
             Object.keys(m.results).forEach(k => {
                 if (k === scoreKey) return;
                 if (k === "PR_DENSITY" || k === "rank_delta_raw") return;
@@ -806,7 +767,7 @@ class TalentScraper {
         });
     }
 
-    // â”€â”€â”€ UTILITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── UTILITY ──────────────────────────────────────────────────────────────
 
     deduplicatePlayers(players) {
         const seen = new Set();
@@ -819,24 +780,21 @@ class TalentScraper {
     }
 
     async initLeaderboardBrowser() {
-        const result = await connect({
+        this.browser = await puppeteer.launch({
             headless: true,
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
+                '--disable-gpu',
                 '--lang=it-IT,it,en-US,en',
                 '--window-size=1920,1080',
-                '--window-position=-32000,-32000'
-            ],
-            turnstile: true,
-            connectOption: { defaultViewport: this.config.viewport },
-            disableXvfb: true
+            ]
         });
-
-        this.browser = result.browser;
-        this.page = result.page;
+        this.page = await this.browser.newPage();
+        await this.page.setViewport(this.config.viewport);
         await this.page.setUserAgent(this.config.userAgent);
-        this.log('Browser reale avviato (Cloudflare bypass attivo)');
+        this.log('Browser avviato (stealth mode)');
     }
 
     async closeBrowser() {
@@ -872,28 +830,25 @@ class TalentScraper {
     }
 
     log(message) {
-        // Telemetria: buffer rolling in-memory
         this.recentLogs.push(message);
         if (this.recentLogs.length > 50) this.recentLogs.shift();
         const ts = new Date().toISOString().replace('T', ' ').substring(0, 19);
         console.log(`[TalentScraper ${ts}] ${message}`);
     }
 
-    // â”€â”€â”€ LOOKUP SINGOLO PLAYER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── LOOKUP SINGOLO PLAYER ────────────────────────────────────────────────
 
     async lookupPlayer(profileUrl) {
         if (!profileUrl || !profileUrl.includes('fortnitetracker.com')) {
             throw new Error('URL non valido. Inserisci un link di fortnitetracker.com');
         }
 
-        // Estrai nome dall'URL come placeholder finchÃ© non lo scrapiamo
         const namePart = decodeURIComponent(profileUrl.split('/').pop() || 'Unknown');
         const player = { name: namePart, profileUrl };
 
         this.log(`Lookup singolo player: ${profileUrl}`);
         const details = await this.scrapePlayerWithOwnBrowser(player);
 
-        // Calcola talent score nel contesto del pool attuale (esclude eventuali copie dello stesso player)
         const existingData = await this.getLatestStats();
         const pool = (existingData.players || []).filter(p => p.profileUrl !== profileUrl && p.name !== details.name);
 
