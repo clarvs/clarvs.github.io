@@ -876,4 +876,60 @@ class TalentScraper {
     }
 }
 
-module.exports = TalentScraper;
+// ─── EXPRESS ROUTER ───────────────────────────────────────────────────────────
+const router = require('express').Router();
+const { requireAuth } = require('../../middleware/auth');
+const scraperInstance = new TalentScraper({ enableScheduling: true });
+
+router.get('/urls', async (req, res) => {
+    try {
+        const urls = await scraperInstance.getUrls();
+        res.json({ urls });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/urls', requireAuth, async (req, res) => {
+    try {
+        const { urls } = req.body;
+        await scraperInstance.saveUrls(urls);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/run', requireAuth, async (req, res) => {
+    try {
+        scraperInstance.runScraping().catch(() => {});
+        res.json({ success: true, message: 'Scraping avviato' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/status', (req, res) => {
+    res.json(scraperInstance.getStatus());
+});
+
+router.get('/stats', async (req, res) => {
+    try {
+        const data = await scraperInstance.getLatestStats();
+        res.json(data);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/lookup', requireAuth, async (req, res) => {
+    try {
+        const { profileUrl } = req.body;
+        const result = await scraperInstance.lookupPlayer(profileUrl);
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+module.exports = router;
