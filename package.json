@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "build": "node node_modules/puppeteer/install.mjs",
     "scrape": "node scraper/run-scraper-standalone.js",
     "test": "echo 'No tests yet' && exit 0",
     "lint": "eslint src/ public/js/ --ext .js"
@@ -32,7 +33,6 @@
     "puppeteer": "^24.37.5",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "puppeteer-real-browser": "latest",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
