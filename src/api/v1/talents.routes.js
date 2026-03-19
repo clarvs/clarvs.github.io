@@ -358,7 +358,7 @@ class TalentScraper {
         let browser = null;
         try {
             const result = await connect({
-                headless: false,
+                headless: true,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -446,7 +446,7 @@ class TalentScraper {
         let browser = null;
         try {
             const result = await connect({
-                headless: false,
+                headless: true,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -820,7 +820,7 @@ class TalentScraper {
 
     async initLeaderboardBrowser() {
         const result = await connect({
-            headless: false,
+            headless: true,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
