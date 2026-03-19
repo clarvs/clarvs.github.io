@@ -83,7 +83,7 @@ class FortniteTrackerScraper {
 
         try {
             const results = [];
-            const batchSize = 10;
+            const batchSize = 1;
             const totalBatches = Math.ceil(this.players.length / batchSize);
 
             for (let i = 0; i < this.players.length; i += batchSize) {
