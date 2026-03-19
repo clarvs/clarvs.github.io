@@ -135,7 +135,7 @@ class FortniteTrackerScraper {
                 '--window-position=-32000,-32000',
             ];
             const result = await connect({
-                headless: false,
+                headless: true,
                 args,
                 turnstile: true,
                 connectOption: { defaultViewport: this.config.viewport },
@@ -213,7 +213,7 @@ class FortniteTrackerScraper {
         ];
 
         const result = await connect({
-            headless: false,
+            headless: true,
             args,
             turnstile: true,
             connectOption: {
