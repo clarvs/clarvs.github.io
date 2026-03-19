@@ -1,11 +1,12 @@
 /**
  * FORTNITE TRACKER WEB SCRAPER
- * Usa puppeteer-real-browser (stesso del talent scraper) per bypassare Cloudflare.
- * Il browser reale con turnstile:true risolve automaticamente i challenge.
+ * Usa puppeteer-extra + stealth plugin per bypassare Cloudflare.
  * Scheduling: ogni notte alle 01:00
  */
 
-const { connect } = require('puppeteer-real-browser');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 const cron = require('node-cron');
 const fs   = require('fs').promises;
 const path = require('path');
@@ -30,7 +31,6 @@ class FortniteTrackerScraper {
         };
 
         this.players = []; // caricati async in runScraping()
-
 
         this.setupDirectories();
 
@@ -127,22 +127,19 @@ class FortniteTrackerScraper {
 
         const initBr = async () => {
             if (browser) { try { await browser.close(); } catch {} browser = null; page = null; }
-            const args = [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--lang=en-US,en',
-                `--window-size=${this.config.viewport.width},${this.config.viewport.height}`,
-                '--window-position=-32000,-32000',
-            ];
-            const result = await connect({
+            browser = await puppeteer.launch({
                 headless: true,
-                args,
-                turnstile: true,
-                connectOption: { defaultViewport: this.config.viewport },
-                disableXvfb: true
+                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-gpu',
+                    '--lang=en-US,en',
+                    `--window-size=${this.config.viewport.width},${this.config.viewport.height}`,
+                ]
             });
-            browser = result.browser;
-            page    = result.page;
+            page = await browser.newPage();
+            await page.setViewport(this.config.viewport);
             await page.setUserAgent(this.config.userAgent);
             this.log(`[${player.name}] Browser avviato`);
         };
@@ -204,29 +201,20 @@ class FortniteTrackerScraper {
     async initBrowser() {
         await this.closeBrowser();
 
-        const args = [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--lang=en-US,en',
-            `--window-size=${this.config.viewport.width},${this.config.viewport.height}`,
-            '--window-position=-32000,-32000',
-        ];
-
-        const result = await connect({
+        this.browser = await puppeteer.launch({
             headless: true,
-            args,
-            turnstile: true,
-            connectOption: {
-                defaultViewport: this.config.viewport
-            },
-            disableXvfb: true
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-gpu',
+                '--lang=en-US,en',
+                `--window-size=${this.config.viewport.width},${this.config.viewport.height}`,
+            ]
         });
-
-        this.browser = result.browser;
-        this.page    = result.page;
-
+        this.page = await this.browser.newPage();
+        await this.page.setViewport(this.config.viewport);
         await this.page.setUserAgent(this.config.userAgent);
-
         this.log('Browser avviato (diretto)');
     }
 
@@ -257,7 +245,7 @@ class FortniteTrackerScraper {
             timeout:   this.config.requestTimeout
         });
 
-        // Attende che Cloudflare (se presente) venga risolto dal turnstile auto-clicker
+        // Attende che Cloudflare (se presente) venga risolto
         await this.waitForCloudflare(page, 45000);
 
         // Simulazione umana + 5 secondi extra per lasciare che la pagina si stabilizzi
@@ -281,7 +269,6 @@ class FortniteTrackerScraper {
             }
 
             // === POWER RANKING (selettore DOM diretto) ===
-            // Prova prima con label + value abbinati
             const totalsItems = document.querySelectorAll(
                 '.profile-events-totals__item, .profile-events-totals > div, .profile-events-totals > *'
             );
@@ -296,7 +283,6 @@ class FortniteTrackerScraper {
                     }
                 }
             });
-            // Fallback: prende il primo valore numeroso trovato in .profile-events-totals__value
             if (data.pr === null) {
                 document.querySelectorAll('.profile-events-totals__value').forEach(el => {
                     if (data.pr !== null) return;
@@ -322,7 +308,7 @@ class FortniteTrackerScraper {
             }
             data.earnings = maxEarnings;
 
-            // === TOURNAMENTS (selettori DOM, stesso approccio del talent scraper) ===
+            // === TOURNAMENTS ===
             data._debug.totalLines = textLines.length;
 
             document.querySelectorAll('tr.profile-event-row').forEach(row => {
@@ -340,7 +326,6 @@ class FortniteTrackerScraper {
                 data.tournaments.push({ name, placement });
             });
 
-            // Fallback testo se i selettori non trovano nulla (pagina non ancora renderizzata)
             if (data.tournaments.length === 0) {
                 for (let i = 0; i < textLines.length && data.tournaments.length < 5; i++) {
                     const line = textLines[i];
@@ -390,7 +375,6 @@ class FortniteTrackerScraper {
         };
     }
 
-    // Attende che Cloudflare risolva il challenge (turnstile lo clicca automaticamente)
     async waitForCloudflare(page, maxWait = 45000) {
         const start = Date.now();
         while (Date.now() - start < maxWait) {
@@ -400,7 +384,7 @@ class FortniteTrackerScraper {
                     this.log(`Pagina caricata: "${title}"`);
                     return true;
                 }
-                this.log(`Cloudflare challenge... (${Math.round((Date.now() - start) / 1000)}s/${maxWait / 1000}s) — turnstile in risoluzione`);
+                this.log(`Cloudflare challenge... (${Math.round((Date.now() - start) / 1000)}s/${maxWait / 1000}s)`);
             } catch {}
             await this.delay(3000);
         }
@@ -441,7 +425,6 @@ class FortniteTrackerScraper {
 
     async saveStats(statsArray) {
         try {
-            // Batch upsert — unica chiamata DB per chunk invece di N chiamate singole
             const records = statsArray.map(function(player) {
                 var tournaments = ((player.stats && player.stats.tournaments) || [])
                     .filter(function(t) { return t.placement <= 500; })
@@ -468,6 +451,7 @@ class FortniteTrackerScraper {
             this.log("Errore salvataggio stats: " + error.message);
         }
     }
+
     async getLatestStats() {
         try {
             const { data } = await supabase.from('player_stats').select('*').order('player_name');
